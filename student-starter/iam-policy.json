@@ -1,0 +1,55 @@
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "AdFlowSQS",
+            "Effect": "Allow",
+            "Action": [
+                "sqs:CreateQueue",
+                "sqs:DeleteQueue",
+                "sqs:TagQueue",
+                "sqs:SendMessage",
+                "sqs:ReceiveMessage",
+                "sqs:DeleteMessage",
+                "sqs:GetQueueAttributes",
+                "sqs:GetQueueUrl",
+                "sqs:PurgeQueue",
+                "sqs:ListQueues"
+            ],
+            "Resource": [
+                "arn:aws:sqs:us-east-1:YOUR-ACCOUNT-ID:adflow-YOURID-*"
+            ]
+        },
+        {
+            "Sid": "AdFlowSQSList",
+            "Effect": "Allow",
+            "Action": "sqs:ListQueues",
+            "Resource": "*"
+        },
+        {
+            "Sid": "AdFlowDynamoDB",
+            "Effect": "Allow",
+            "Action": [
+                "dynamodb:CreateTable",
+                "dynamodb:DeleteTable",
+                "dynamodb:TagResource",
+                "dynamodb:PutItem",
+                "dynamodb:GetItem",
+                "dynamodb:Scan",
+                "dynamodb:Query",
+                "dynamodb:DeleteItem",
+                "dynamodb:DescribeTable",
+                "dynamodb:ListTables"
+            ],
+            "Resource": [
+                "arn:aws:dynamodb:us-east-1:YOUR-ACCOUNT-ID:table/adflow-YOURID-*"
+            ]
+        },
+        {
+            "Sid": "AdFlowDynamoDBList",
+            "Effect": "Allow",
+            "Action": "dynamodb:ListTables",
+            "Resource": "*"
+        }
+    ]
+}

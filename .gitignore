@@ -1,0 +1,7 @@
+*.csv
+*.pdf
+.venv/
+venv/
+__pycache__/
+.pytest_cache/
+_secrets.env

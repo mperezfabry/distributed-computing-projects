@@ -1,0 +1,13 @@
+version = 0.1
+
+[default.deploy.parameters]
+stack_name = "adflow-mperez"
+resolve_s3 = true
+s3_prefix = "adflow-mperez"
+region = "us-east-1"
+capabilities = "CAPABILITY_IAM"
+parameter_overrides = "StudentId=\"mperez\""
+image_repositories = []
+
+[default.global.parameters]
+region = "us-east-1"

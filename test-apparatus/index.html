@@ -1,0 +1,1697 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AdFlow Test Apparatus</title>
+    <!-- AWS SDK v2 browser bundle -->
+    <script src="https://sdk.amazonaws.com/js/aws-sdk-2.1692.0.min.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background-color: #f8fafc;
+            color: #1e293b;
+            line-height: 1.6;
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            color: #1e40af;
+            margin-bottom: 5px;
+            font-size: 24px;
+        }
+
+        h2 {
+            color: #1e40af;
+            border-left: 4px solid #3b82f6;
+            padding-left: 15px;
+            margin-top: 30px;
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+
+        label {
+            display: block;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 4px;
+            color: #1e293b;
+        }
+
+        input,
+        select {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            font-size: 14px;
+            margin-bottom: 12px;
+            background: #fff;
+            color: #1e293b;
+        }
+
+        input:focus,
+        select:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
+        }
+
+        input[readonly] {
+            background: #f1f5f9;
+            color: #64748b;
+        }
+
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+
+        .btn-primary {
+            background: #1e40af;
+            color: #fff;
+        }
+
+        .btn-primary:hover {
+            background: #1d4ed8;
+        }
+
+        .btn-primary:disabled {
+            background: #94a3b8;
+            cursor: not-allowed;
+        }
+
+        .btn-danger {
+            background: #dc2626;
+            color: #fff;
+        }
+
+        .btn-danger:hover {
+            background: #b91c1c;
+        }
+
+        .btn-secondary {
+            background: #e2e8f0;
+            color: #1e293b;
+        }
+
+        .btn-secondary:hover {
+            background: #cbd5e1;
+        }
+
+        .card {
+            background: #fff;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .card-blue {
+            background: #dbeafe;
+            border-color: #93c5fd;
+        }
+
+        .card-green {
+            background: #d1fae5;
+            border-color: #10b981;
+        }
+
+        .card-yellow {
+            background: #fef3c7;
+            border-color: #f59e0b;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        .grid-3 {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 16px;
+        }
+
+        .grid-4 {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr 1fr;
+            gap: 12px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 10px 0;
+            font-size: 14px;
+            border: 1px solid #cbd5e1;
+        }
+
+        th {
+            padding: 10px 12px;
+            text-align: left;
+            background: #f1f5f9;
+            color: #1e40af;
+            border: 1px solid #cbd5e1;
+            font-weight: 600;
+        }
+
+        td {
+            padding: 8px 12px;
+            border: 1px solid #cbd5e1;
+        }
+
+        tr:nth-child(even) {
+            background: #f8fafc;
+        }
+
+        .mono {
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+        }
+
+        .status-bar {
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 8px 15px;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 13px;
+            margin: 10px 0;
+            min-height: 36px;
+        }
+
+        .progress-container {
+            background: #e2e8f0;
+            border-radius: 4px;
+            height: 24px;
+            margin: 10px 0;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: #3b82f6;
+            border-radius: 4px;
+            transition: width 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .subtitle {
+            color: #64748b;
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+
+        .metric-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: #1e40af;
+        }
+
+        .metric-label {
+            font-size: 12px;
+            color: #64748b;
+            text-transform: uppercase;
+        }
+
+        .log-area {
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 12px;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+
+        .cred-note {
+            font-size: 12px;
+            color: #64748b;
+            margin-top: -8px;
+            margin-bottom: 12px;
+        }
+
+        .connected-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .badge-ok {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .badge-err {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .badge-wait {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .password-field {
+            -webkit-text-security: disc;
+        }
+
+        @media (max-width: 768px) {
+
+            .grid-2,
+            .grid-3,
+            .grid-4 {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>AdFlow Test Apparatus</h1>
+    <p class="subtitle">Distributed Systems for Data Science - Ad Selection Pipeline Testing</p>
+
+    <!-- AWS Credentials -->
+    <div class="card card-green">
+        <h2 style="margin-top:0; border-left:none; padding-left:0;">AWS Credentials</h2>
+        <p class="cred-note">Your credentials stay in this browser tab. Save profiles to quickly switch between student deployments.</p>
+        <div style="margin-bottom:12px;">
+            <label for="savedProfiles" style="font-weight:600;">Saved Profiles</label>
+            <div style="display:flex; gap:8px; align-items:center;">
+                <select id="savedProfiles" onchange="loadProfile()" style="flex:1; max-width:400px;">
+                    <option value="">— Select a saved profile —</option>
+                </select>
+                <button class="btn-secondary" onclick="deleteProfile()" style="padding:8px 12px; font-size:12px;">Delete Selected</button>
+            </div>
+        </div>
+        <div class="grid-3">
+            <div>
+                <label for="accessKeyId">Access Key ID</label>
+                <input type="text" id="accessKeyId" placeholder="AKIA..." autocomplete="off">
+            </div>
+            <div>
+                <label for="secretAccessKey">Secret Access Key</label>
+                <input type="text" id="secretAccessKey" class="password-field" placeholder="Your secret key"
+                    autocomplete="off">
+            </div>
+            <div>
+                <label for="region">AWS Region</label>
+                <select id="region">
+                    <option value="us-east-1" selected>us-east-1</option>
+                    <option value="us-east-2">us-east-2</option>
+                    <option value="us-west-1">us-west-1</option>
+                    <option value="us-west-2">us-west-2</option>
+                </select>
+            </div>
+        </div>
+        <div class="btn-group">
+            <button class="btn-primary" onclick="testConnection()">Test Connection</button>
+            <button class="btn-secondary" onclick="saveConfig()">Save Profile</button>
+            <button class="btn-secondary" onclick="clearAllProfiles()">Clear All</button>
+            <span id="connectionStatus" class="connected-badge badge-wait">Not tested</span>
+            <span id="saveStatus" style="font-size:12px; color:#64748b;"></span>
+        </div>
+    </div>
+
+    <!-- Configuration -->
+    <div class="card card-blue">
+        <h2 style="margin-top:0; border-left:none; padding-left:0;">Configuration</h2>
+        <div class="grid-3">
+            <div>
+                <label for="studentId">Student ID</label>
+                <input type="text" id="studentId" placeholder="e.g. gsalu" value="">
+            </div>
+            <div>
+                <label for="seed">Random Seed</label>
+                <input type="number" id="seed" value="42">
+            </div>
+            <div>
+                <label>Input Queue URL (auto-generated)</label>
+                <input type="text" id="inputQueueUrl" readonly class="mono" placeholder="Enter Student ID above">
+            </div>
+        </div>
+        <div class="grid-2">
+            <div>
+                <label>Results Queue URL (auto-generated)</label>
+                <input type="text" id="resultsQueueUrl" readonly class="mono" placeholder="Enter Student ID above">
+            </div>
+            <div>
+                <label>DynamoDB Table Name (auto-generated)</label>
+                <input type="text" id="tableName" readonly class="mono" placeholder="Enter Student ID above">
+            </div>
+        </div>
+    </div>
+
+    <!-- Test Profiles -->
+    <div class="card">
+        <h2 style="margin-top:0; border-left:none; padding-left:0;">Test Profile</h2>
+        <div class="grid-3">
+            <div>
+                <label for="profile">Profile</label>
+                <select id="profile">
+                    <option value="warmup">Warmup (10 msgs, slow)</option>
+                    <option value="steady">Steady (100 msgs, moderate)</option>
+                    <option value="burst" selected>Burst (500 msgs, all at once)</option>
+                    <option value="ramp">Ramp (500 msgs, accelerating)</option>
+                    <option value="soak">Soak (200 msgs, sustained)</option>
+                    <option value="custom">Custom</option>
+                </select>
+            </div>
+            <div>
+                <label for="msgCount">Message Count</label>
+                <input type="number" id="msgCount" value="500" min="1" max="5000">
+            </div>
+            <div>
+                <label for="batchDelay">Delay Between Batches (ms)</label>
+                <input type="number" id="batchDelay" value="0" min="0" max="10000">
+            </div>
+        </div>
+        <div id="customWaveRow" class="grid-2" style="display:none; margin-top:10px;">
+            <div>
+                <label for="wavePattern">Wave Pattern (comma-separated)</label>
+                <input type="text" id="wavePattern" placeholder="e.g. 50,50,10" value="50,50,10">
+            </div>
+            <div>
+                <label for="totalMessages">Total Messages</label>
+                <input type="number" id="totalMessages" value="500" min="1" max="10000">
+            </div>
+        </div>
+        <div id="profileDesc" style="margin-top:10px; padding:10px 14px; background:#f1f5f9; border-left:3px solid #3b82f6; border-radius:4px; font-size:13px; color:#475569; line-height:1.5;"></div>
+        </div>
+
+        <div class="btn-group">
+            <button class="btn-primary" id="btnRun" onclick="runTest()">Run Test</button>
+            <button class="btn-secondary" id="btnStop" onclick="stopTest()" disabled>Stop</button>
+            <button class="btn-secondary" onclick="startPolling()">Poll Results Only</button>
+        </div>
+    </div>
+
+    <!-- Live Metrics -->
+    <div class="card">
+        <h2 style="margin-top:0; border-left:none; padding-left:0;">Live Metrics</h2>
+        <div class="grid-4">
+            <div style="text-align:center;">
+                <div class="metric-value" id="metricSent">0</div>
+                <div class="metric-label">Sent</div>
+            </div>
+            <div style="text-align:center;">
+                <div class="metric-value" id="metricReceived">0</div>
+                <div class="metric-label">Received</div>
+            </div>
+            <div style="text-align:center;">
+                <div class="metric-value" id="metricAvgLatency">--</div>
+                <div class="metric-label">Avg Latency</div>
+            </div>
+            <div style="text-align:center;">
+                <div class="metric-value" id="metricThroughput">--</div>
+                <div class="metric-label">Results/sec</div>
+            </div>
+        </div>
+        <div class="progress-container">
+            <div class="progress-bar" id="progressBar" style="width:0%;">0%</div>
+        </div>
+        <div class="status-bar" id="statusBar">Ready. Configure your credentials and student ID, then select a test
+            profile.</div>
+    </div>
+
+    <!-- Performance Stats -->
+    <div class="card">
+        <h2 style="margin-top:0; border-left:none; padding-left:0;">Performance Stats
+            <span style="font-size:12px; font-weight:400; color:#64748b; font-family:monospace;">— latency = round-trip time from
+                SQS send to result received</span>
+        </h2>
+
+        <!-- Stat boxes -->
+        <div class="grid-4" style="margin-bottom:16px;">
+            <div style="text-align:center; background:#f1f5f9; border-radius:6px; padding:12px;">
+                <div style="font-size:22px; font-weight:700; color:#065f46;" id="perfMin">--</div>
+                <div class="metric-label">Min</div>
+            </div>
+            <div style="text-align:center; background:#f1f5f9; border-radius:6px; padding:12px;">
+                <div style="font-size:22px; font-weight:700; color:#1e40af;" id="perfAvg">--</div>
+                <div class="metric-label">Avg</div>
+            </div>
+            <div style="text-align:center; background:#f1f5f9; border-radius:6px; padding:12px;">
+                <div style="font-size:22px; font-weight:700; color:#92400e;" id="perfP95">--</div>
+                <div class="metric-label">p95</div>
+            </div>
+            <div style="text-align:center; background:#f1f5f9; border-radius:6px; padding:12px;">
+                <div style="font-size:22px; font-weight:700; color:#991b1b;" id="perfMax">--</div>
+                <div class="metric-label">Max</div>
+            </div>
+        </div>
+
+        <!-- Latency bucket bar -->
+        <div style="margin-bottom:6px;">
+            <div style="font-size:12px; font-weight:600; color:#475569; margin-bottom:4px;">Latency distribution —
+                target: &lt;500 ms</div>
+            <div style="display:flex; height:28px; border-radius:4px; overflow:hidden; background:#f1f5f9;">
+                <div id="bucketFast"
+                    style="background:#059669; display:flex; align-items:center; justify-content:center; transition:width 0.4s; min-width:0; overflow:hidden;">
+                    <span id="bucketFastLbl"
+                        style="font-size:11px; font-weight:600; color:#fff; white-space:nowrap; padding:0 4px;"></span>
+                </div>
+                <div id="bucketOk"
+                    style="background:#d97706; display:flex; align-items:center; justify-content:center; transition:width 0.4s; min-width:0; overflow:hidden;">
+                    <span id="bucketOkLbl"
+                        style="font-size:11px; font-weight:600; color:#fff; white-space:nowrap; padding:0 4px;"></span>
+                </div>
+                <div id="bucketSlow"
+                    style="background:#dc2626; display:flex; align-items:center; justify-content:center; transition:width 0.4s; min-width:0; overflow:hidden;">
+                    <span id="bucketSlowLbl"
+                        style="font-size:11px; font-weight:600; color:#fff; white-space:nowrap; padding:0 4px;"></span>
+                </div>
+            </div>
+            <div style="display:flex; gap:16px; margin-top:4px; font-size:11px; color:#64748b;">
+                <span style="color:#059669;">&#9632; &lt;500 ms (target)</span>
+                <span style="color:#d97706;">&#9632; 500 ms – 1 s</span>
+                <span style="color:#dc2626;">&#9632; &gt;1 s (slow)</span>
+            </div>
+        </div>
+
+        <!-- Sparkline -->
+        <div style="margin-top:14px;">
+            <div style="font-size:12px; font-weight:600; color:#475569; margin-bottom:4px;">Recent latency (last 60
+                results) — dashed line = 500 ms target</div>
+            <canvas id="sparkCanvas" width="760" height="60"
+                style="width:100%; height:60px; border:1px solid #e2e8f0; border-radius:4px; background:#f8fafc;"></canvas>
+        </div>
+    </div>
+
+    <!-- Results Table -->
+    <div class="card">
+        <h2 style="margin-top:0; border-left:none; padding-left:0;">Results</h2>
+        <div style="max-height:300px; overflow-y:auto;">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Opportunity ID</th>
+                        <th>Winner</th>
+                        <th>Bid ($)</th>
+                        <th>Score</th>
+                        <th>Margin</th>
+                        <th>Latency</th>
+                        <th>Processed At</th>
+                    </tr>
+                </thead>
+                <tbody id="resultsBody">
+                </tbody>
+            </table>
+        </div>
+        <p style="color:#64748b; font-size:13px; margin-top:8px;">
+            Showing most recent results. Table updates as results arrive from the results queue.
+        </p>
+    </div>
+
+    <!-- DynamoDB Table Viewer -->
+    <div class="card">
+        <h2 style="margin-top:0; border-left:none; padding-left:0;">DynamoDB Table Contents</h2>
+        <div class="btn-group" style="margin-bottom:10px;">
+            <button class="btn-primary" onclick="scanDynamoTable()">Scan Table</button>
+            <span id="scanStatus" style="font-size:13px; color:#64748b; align-self:center;"></span>
+        </div>
+        <div style="max-height:400px; overflow-y:auto;">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Opportunity ID</th>
+                        <th>Winner</th>
+                        <th>Winning Bid</th>
+                        <th>Winning Score</th>
+                        <th>Score Margin</th>
+                        <th>Content Category</th>
+                        <th>Region</th>
+                        <th>Device</th>
+                        <th>Num Bids</th>
+                        <th>Processed At</th>
+                    </tr>
+                </thead>
+                <tbody id="dynamoBody">
+                </tbody>
+            </table>
+        </div>
+        <p style="color:#64748b; font-size:13px; margin-top:8px;">
+            Click "Scan Table" to read all records from the DynamoDB results table.
+        </p>
+    </div>
+
+    <!-- Cleanup -->
+    <div class="card card-yellow">
+        <h2 style="margin-top:0; border-left:none; padding-left:0;">Cleanup</h2>
+        <p style="font-size:14px;">Clear queues and table between test runs. DynamoDB cleanup deletes and recreates the
+            table.</p>
+        <div class="btn-group">
+            <button class="btn-danger" onclick="purgeInputQueue()">Purge Input Queue</button>
+            <button class="btn-danger" onclick="purgeResultsQueue()">Purge Results Queue</button>
+            <button class="btn-danger" onclick="cleanupTable()">Recreate DynamoDB Table</button>
+            <button class="btn-danger" onclick="fullCleanup()">Full Cleanup (All)</button>
+        </div>
+    </div>
+
+    <!-- Activity Log -->
+    <div class="card">
+        <h2 style="margin-top:0; border-left:none; padding-left:0;">Activity Log</h2>
+        <div class="log-area" id="logArea">AdFlow Test Apparatus initialized (client-side mode).
+        </div>
+    </div>
+
+    <script>
+        // =====================================================================
+        // State
+        // =====================================================================
+        let testRunning = false;
+        let pollInterval = null;
+        let sentCount = 0;
+        let receivedCount = 0;
+        let latencies = [];
+        let testStartTime = null;
+        let generatedMessages = [];
+        let sendTimes = new Map(); // opportunity_id -> epoch ms when sent to SQS
+        let receivedIds = new Set(); // track unique opportunity_ids to deduplicate SQS at-least-once delivery
+        let sqsClient = null;
+        let dynamoClient = null;
+
+        // =====================================================================
+        // AWS Client Setup
+        // =====================================================================
+        function getAwsConfig() {
+            const accessKeyId = document.getElementById('accessKeyId').value.trim();
+            const secretAccessKey = document.getElementById('secretAccessKey').value.trim();
+            const region = document.getElementById('region').value;
+            if (!accessKeyId || !secretAccessKey) return null;
+            return { accessKeyId, secretAccessKey, region };
+        }
+
+        function initClients() {
+            const cfg = getAwsConfig();
+            if (!cfg) {
+                log('ERROR: Enter your AWS Access Key ID and Secret Access Key.');
+                return false;
+            }
+            AWS.config.update({
+                region: cfg.region,
+                accessKeyId: cfg.accessKeyId,
+                secretAccessKey: cfg.secretAccessKey,
+            });
+            sqsClient = new AWS.SQS();
+            dynamoClient = new AWS.DynamoDB();
+            return true;
+        }
+
+        async function testConnection() {
+            const badge = document.getElementById('connectionStatus');
+            badge.textContent = 'Testing...';
+            badge.className = 'connected-badge badge-wait';
+
+            if (!initClients()) {
+                badge.textContent = 'Missing credentials';
+                badge.className = 'connected-badge badge-err';
+                return;
+            }
+
+            try {
+                await sqsClient.listQueues({ MaxResults: 1 }).promise();
+                badge.textContent = 'Connected';
+                badge.className = 'connected-badge badge-ok';
+                log('AWS connection successful.');
+            } catch (e) {
+                badge.textContent = 'Failed: ' + e.code;
+                badge.className = 'connected-badge badge-err';
+                log('AWS connection failed: ' + e.message);
+            }
+        }
+
+        // =====================================================================
+        // Configuration auto-fill
+        // =====================================================================
+        document.getElementById('studentId').addEventListener('input', updateConfig);
+        document.getElementById('region').addEventListener('change', updateConfig);
+        document.getElementById('profile').addEventListener('change', updateProfile);
+
+        function updateConfig() {
+            const sid = document.getElementById('studentId').value.trim().toLowerCase();
+            const region = document.getElementById('region').value;
+
+            if (sid) {
+                // Build queue names -- the server will resolve them to full URLs
+                // via SQS getQueueUrl when needed
+                document.getElementById('inputQueueUrl').value = 'adflow-' + sid + '-input';
+                document.getElementById('resultsQueueUrl').value = 'adflow-' + sid + '-results';
+                document.getElementById('tableName').value = 'adflow-' + sid + '-results';
+            } else {
+                document.getElementById('inputQueueUrl').value = '';
+                document.getElementById('resultsQueueUrl').value = '';
+                document.getElementById('tableName').value = '';
+            }
+        }
+
+        const PROFILES = {
+            warmup:  { count: 10,   delay: 500,  delayUsed: true },
+            steady:  { count: 100,  delay: 100,  delayUsed: true },
+            burst:   { count: 500,  delay: 0,    delayUsed: false },
+            ramp:    { count: 500,  delay: 0,    delayUsed: false },
+            soak:    { count: 200,  delay: 1000, delayUsed: true },
+            custom:  { count: null, delay: null, delayUsed: true },
+        };
+
+        function getProfileDescription(profile) {
+            const count = document.getElementById('msgCount').value;
+            const delay = document.getElementById('batchDelay').value;
+            const descs = {
+                warmup: '<strong>Warmup</strong> — Sends <strong>Message Count</strong> (' + count + ' by default) messages ' +
+                    'in batches of 10, pausing <strong>Delay Between Batches</strong> (' + delay + ' ms) between each batch. ' +
+                    'Ideal for measuring <em>true per-message pipeline latency</em> with no queue backlog. ' +
+                    'Expect sub-500 ms if your Lambda is working correctly.',
+                steady: '<strong>Steady</strong> — Sends <strong>Message Count</strong> (' + count + ' by default) messages ' +
+                    'in batches of 10, pausing <strong>Delay Between Batches</strong> (' + delay + ' ms) between each batch. ' +
+                    'Simulates a moderate, realistic workload. Good for checking sustained throughput without overwhelming the queue.',
+                burst:  '<strong>Burst</strong> — Fires all <strong>Message Count</strong> (' + count + ' by default) messages ' +
+                    'as fast as possible using parallel sends. <strong>Delay Between Batches</strong> is ignored. ' +
+                    'Tests how quickly your pipeline drains a sudden spike. ' +
+                    'High avg latency is expected here because later messages wait in the queue.',
+                ramp:   '<strong>Ramp</strong> — Sends <strong>Message Count</strong> (' + count + ' by default) messages ' +
+                    'with an automatically accelerating pace (starts slower, ends fastest). ' +
+                    '<strong>Delay Between Batches</strong> is ignored. Tests how your pipeline handles increasing load.',
+                soak:   '<strong>Soak</strong> — Sends <strong>Message Count</strong> (' + count + ' by default) messages ' +
+                    'in batches of 10, pausing <strong>Delay Between Batches</strong> (' + delay + ' ms) between each batch. ' +
+                    'Simulates sustained low traffic over a longer period. Good for spotting cold-start issues and memory leaks.',
+                custom: function() {
+                    const wp = document.getElementById('wavePattern').value || '50,50,10';
+                    const total = document.getElementById('totalMessages').value || '500';
+                    return '<strong>Custom</strong> — Uses <strong>Wave Pattern</strong> (<code>' + wp + '</code>) to send messages in repeating waves, ' +
+                        'pausing <strong>Delay Between Batches</strong> (' + delay + ' ms) between each wave. ' +
+                        'The pattern repeats until <strong>Total Messages</strong> (' + total + ') are sent. ' +
+                        'For example, <code>50,50,10</code> sends 50 → pause → 50 → pause → 10 → pause → 50 → ... ' +
+                        'Each wave is sent as a parallel burst internally.';
+                }(),
+            };
+            return descs[profile] || '';
+        }
+
+        function updateProfile() {
+            const profile = document.getElementById('profile').value;
+            const cfg = PROFILES[profile];
+            const delayInput = document.getElementById('batchDelay');
+            const isCustom = (profile === 'custom');
+
+            if (cfg.count !== null) {
+                document.getElementById('msgCount').value = cfg.count;
+                delayInput.value = cfg.delay;
+            }
+
+            // Gray out delay if not used by this profile
+            delayInput.disabled = !cfg.delayUsed;
+            delayInput.style.opacity = cfg.delayUsed ? '1' : '0.4';
+
+            // Show/hide custom wave fields; hide msgCount for custom
+            document.getElementById('customWaveRow').style.display = isCustom ? 'grid' : 'none';
+            document.getElementById('msgCount').parentElement.style.display = isCustom ? 'none' : '';
+
+            // Update description
+            document.getElementById('profileDesc').innerHTML = getProfileDescription(profile);
+        }
+
+        // =====================================================================
+        // Queue URL resolution
+        // =====================================================================
+        async function resolveQueueUrl(nameOrUrl) {
+            if (!nameOrUrl) return null;
+            if (nameOrUrl.startsWith('https://')) return nameOrUrl;
+            // It is a queue name -- resolve via getQueueUrl
+            const resp = await sqsClient.getQueueUrl({ QueueName: nameOrUrl }).promise();
+            return resp.QueueUrl;
+        }
+
+        // =====================================================================
+        // Logging
+        // =====================================================================
+        function log(msg) {
+            const area = document.getElementById('logArea');
+            const ts = new Date().toLocaleTimeString();
+            area.textContent += '[' + ts + '] ' + msg + '\n';
+            area.scrollTop = area.scrollHeight;
+        }
+
+        function setStatus(msg) {
+            document.getElementById('statusBar').textContent = msg;
+        }
+
+        // =====================================================================
+        // Opportunity Generator (ported from Python simulator)
+        // =====================================================================
+        const ADVERTISERS = [
+            { advertiser_id: "adv_sportswear_01", category: "sportswear", bid_min: 2.00, bid_max: 5.50 },
+            { advertiser_id: "adv_sportswear_02", category: "sportswear", bid_min: 1.50, bid_max: 4.00 },
+            { advertiser_id: "adv_energy_01", category: "energy_drink", bid_min: 2.50, bid_max: 6.00 },
+            { advertiser_id: "adv_energy_02", category: "energy_drink", bid_min: 1.80, bid_max: 4.50 },
+            { advertiser_id: "adv_fintech_01", category: "fintech", bid_min: 3.00, bid_max: 8.00 },
+            { advertiser_id: "adv_fintech_02", category: "fintech", bid_min: 2.00, bid_max: 5.00 },
+            { advertiser_id: "adv_insurance_01", category: "insurance", bid_min: 3.50, bid_max: 7.00 },
+            { advertiser_id: "adv_insurance_02", category: "insurance", bid_min: 2.00, bid_max: 5.50 },
+            { advertiser_id: "adv_streaming_01", category: "streaming", bid_min: 2.50, bid_max: 6.50 },
+            { advertiser_id: "adv_streaming_02", category: "streaming", bid_min: 1.50, bid_max: 4.00 },
+            { advertiser_id: "adv_gaming_01", category: "gaming", bid_min: 2.00, bid_max: 5.00 },
+            { advertiser_id: "adv_gaming_02", category: "gaming", bid_min: 1.00, bid_max: 3.50 },
+            { advertiser_id: "adv_beauty_01", category: "beauty", bid_min: 2.50, bid_max: 5.50 },
+            { advertiser_id: "adv_beauty_02", category: "beauty", bid_min: 1.50, bid_max: 4.00 },
+            { advertiser_id: "adv_travel_01", category: "travel", bid_min: 3.00, bid_max: 7.50 },
+            { advertiser_id: "adv_travel_02", category: "travel", bid_min: 2.00, bid_max: 5.00 },
+            { advertiser_id: "adv_fastfood_01", category: "fast_food", bid_min: 3.50, bid_max: 7.00 },
+            { advertiser_id: "adv_fastfood_02", category: "fast_food", bid_min: 2.50, bid_max: 6.00 },
+            { advertiser_id: "adv_auto_01", category: "automotive", bid_min: 4.00, bid_max: 8.00 },
+            { advertiser_id: "adv_auto_02", category: "automotive", bid_min: 3.00, bid_max: 6.50 },
+            { advertiser_id: "adv_telecom_01", category: "telecom", bid_min: 3.00, bid_max: 6.00 },
+            { advertiser_id: "adv_retail_01", category: "retail", bid_min: 1.50, bid_max: 4.50 },
+            { advertiser_id: "adv_retail_02", category: "retail", bid_min: 1.00, bid_max: 3.00 },
+        ];
+
+        const CONTENT_CATEGORIES = ["sports", "news", "entertainment", "finance", "lifestyle"];
+        const CONTENT_WEIGHTS = [0.25, 0.15, 0.25, 0.20, 0.15];
+        const DEVICES = ["mobile", "desktop"];
+        const DEVICE_WEIGHTS = [0.70, 0.30];
+        const REGIONS = ["northeast", "southeast", "midwest", "west", "international"];
+        const REGION_WEIGHTS = [0.20, 0.25, 0.20, 0.25, 0.10];
+        const HOUR_WEIGHTS = [
+            0.5, 0.3, 0.2, 0.2, 0.3, 0.5,
+            1.5, 2.0, 2.0, 1.5, 1.2, 1.0,
+            1.8, 1.8, 1.2, 1.0, 1.0, 1.2,
+            1.5, 2.0, 2.5, 2.5, 2.0, 1.0,
+        ];
+
+        // Seeded PRNG (mulberry32)
+        function mulberry32(seed) {
+            let s = seed | 0;
+            return function () {
+                s = (s + 0x6D2B79F5) | 0;
+                let t = Math.imul(s ^ (s >>> 15), 1 | s);
+                t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+                return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+            };
+        }
+
+        function weightedChoice(rng, items, weights) {
+            const total = weights.reduce((a, b) => a + b, 0);
+            let r = rng() * total;
+            let cumulative = 0;
+            for (let i = 0; i < items.length; i++) {
+                cumulative += weights[i];
+                if (r <= cumulative) return items[i];
+            }
+            return items[items.length - 1];
+        }
+
+        function rngInt(rng, min, max) {
+            return Math.floor(rng() * (max - min + 1)) + min;
+        }
+
+        function rngUniform(rng, min, max) {
+            return min + rng() * (max - min);
+        }
+
+        function rngSample(rng, arr, count) {
+            const copy = arr.slice();
+            const n = Math.min(count, copy.length);
+            for (let i = copy.length - 1; i > 0; i--) {
+                const j = Math.floor(rng() * (i + 1));
+                [copy[i], copy[j]] = [copy[j], copy[i]];
+            }
+            return copy.slice(0, n);
+        }
+
+        function generateUUID(rng) {
+            const hex = '0123456789abcdef';
+            let uuid = '';
+            for (let i = 0; i < 32; i++) {
+                uuid += hex[Math.floor(rng() * 16)];
+            }
+            return uuid.substring(0, 8) + '-' + uuid.substring(8, 12) + '-4' +
+                uuid.substring(13, 16) + '-' + hex[8 + Math.floor(rng() * 4)] +
+                uuid.substring(17, 20) + '-' + uuid.substring(20, 32);
+        }
+
+        function generateTimestamp(rng) {
+            const hours = [];
+            for (let i = 0; i < 24; i++) hours.push(i);
+            const hour = weightedChoice(rng, hours, HOUR_WEIGHTS);
+            const minute = rngInt(rng, 0, 59);
+            const second = rngInt(rng, 0, 59);
+            const pad = (n) => String(n).padStart(2, '0');
+            return '2025-03-10T' + pad(hour) + ':' + pad(minute) + ':' + pad(second) + 'Z';
+        }
+
+        function generateOpportunity(rng) {
+            const numBids = rngInt(rng, 3, 8);
+            const bidders = rngSample(rng, ADVERTISERS, numBids);
+            return {
+                opportunity_id: generateUUID(rng),
+                timestamp: generateTimestamp(rng),
+                user_id: 'u_' + rngInt(rng, 10000, 99999),
+                content_category: weightedChoice(rng, CONTENT_CATEGORIES, CONTENT_WEIGHTS),
+                device_type: weightedChoice(rng, DEVICES, DEVICE_WEIGHTS),
+                region: weightedChoice(rng, REGIONS, REGION_WEIGHTS),
+                bids: bidders.map(adv => ({
+                    advertiser_id: adv.advertiser_id,
+                    bid_amount: Math.round(rngUniform(rng, adv.bid_min, adv.bid_max) * 100) / 100,
+                    category: adv.category,
+                })),
+            };
+        }
+
+        function generateOpportunities(count, seed) {
+            const rng = mulberry32(seed);
+            const result = [];
+            for (let i = 0; i < count; i++) {
+                result.push(generateOpportunity(rng));
+            }
+            return result;
+        }
+
+        // =====================================================================
+        // Core test flow
+        // =====================================================================
+        async function runTest() {
+            if (!initClients()) return;
+
+            const inputQName = document.getElementById('inputQueueUrl').value.trim();
+            const resultsQName = document.getElementById('resultsQueueUrl').value.trim();
+
+            if (!inputQName || !resultsQName) {
+                log('ERROR: Enter your Student ID first.');
+                return;
+            }
+
+            const profile = document.getElementById('profile').value;
+            const delay = parseInt(document.getElementById('batchDelay').value) || 0;
+            const seed = parseInt(document.getElementById('seed').value) || 42;
+
+            // Determine total message count
+            let count;
+            if (profile === 'custom') {
+                count = parseInt(document.getElementById('totalMessages').value) || 500;
+            } else {
+                count = parseInt(document.getElementById('msgCount').value) || 500;
+            }
+
+            // Parse wave pattern for custom mode
+            let wavePattern = null;
+            if (profile === 'custom') {
+                const raw = document.getElementById('wavePattern').value.trim();
+                if (raw) {
+                    wavePattern = raw.split(',').map(s => parseInt(s.trim())).filter(n => n > 0);
+                    if (wavePattern.length === 0) wavePattern = null;
+                }
+            }
+
+            // Reset state
+            sentCount = 0;
+            receivedCount = 0;
+            latencies = [];
+            sendTimes = new Map();
+            receivedIds = new Set();
+            testStartTime = Date.now();
+            document.getElementById('resultsBody').innerHTML = '';
+            updateMetrics();
+
+            testRunning = true;
+            document.getElementById('btnRun').disabled = true;
+            document.getElementById('btnStop').disabled = false;
+
+            // Resolve queue URLs
+            let inputQueueUrl, resultsQueueUrl;
+            try {
+                setStatus('Resolving queue URLs...');
+                inputQueueUrl = await resolveQueueUrl(inputQName);
+                resultsQueueUrl = await resolveQueueUrl(resultsQName);
+                log('Input queue: ' + inputQueueUrl);
+                log('Results queue: ' + resultsQueueUrl);
+            } catch (e) {
+                log('ERROR resolving queue URLs: ' + e.message);
+                log('Make sure your stack is deployed and your Student ID is correct.');
+                stopTest();
+                return;
+            }
+
+            // Generate messages
+            log('Generating ' + count + ' opportunities (seed=' + seed + ')...');
+            setStatus('Generating messages...');
+            const startGen = performance.now();
+            generatedMessages = generateOpportunities(count, seed);
+            const genMs = (performance.now() - startGen).toFixed(1);
+            log('Generated ' + generatedMessages.length + ' messages in ' + genMs + ' ms');
+
+            // Start polling for results
+            startPollingWithUrl(resultsQueueUrl);
+
+            // Inject messages
+            setStatus('Injecting messages...');
+            const batchSize = 10;
+            let sent = 0;
+            const SEND_PARALLELISM = 5;
+
+            // Helper: build SQS batch entries from a slice of generatedMessages
+            function buildBatches(msgs) {
+                const batches = [];
+                for (let i = 0; i < msgs.length; i += batchSize) {
+                    const batch = msgs.slice(i, i + batchSize);
+                    const entries = batch.map((msg, idx) => ({
+                        Id: String(idx),
+                        MessageBody: JSON.stringify(msg),
+                    }));
+                    batches.push({ batch, entries });
+                }
+                return batches;
+            }
+
+            async function sendOneBatch(b) {
+                const batchSendTime = Date.now();
+                const result = await sqsClient.sendMessageBatch({
+                    QueueUrl: inputQueueUrl,
+                    Entries: b.entries,
+                }).promise();
+                const ok = (result.Successful || []).length;
+                for (const m of b.batch) {
+                    sendTimes.set(m.opportunity_id, batchSendTime);
+                }
+                sent += ok;
+                sentCount = sent;
+                return ok;
+            }
+
+            // Send a wave of N messages as a parallel burst
+            async function sendWave(msgs, waveNum) {
+                const waveBatches = buildBatches(msgs);
+                for (let w = 0; w < waveBatches.length && testRunning; w += SEND_PARALLELISM) {
+                    const chunk = waveBatches.slice(w, w + SEND_PARALLELISM);
+                    try {
+                        const results = await Promise.all(chunk.map(b => sendOneBatch(b)));
+                        const totalOk = results.reduce((a, b) => a + b, 0);
+                        updateMetrics();
+                    } catch (e) {
+                        log('ERROR in wave ' + waveNum + ': ' + e.message);
+                    }
+                }
+            }
+
+            if (profile === 'custom' && wavePattern) {
+                // Custom wave pattern mode
+                let msgIndex = 0;
+                let waveNum = 0;
+                log('Wave pattern: [' + wavePattern.join(', ') + '] repeating to ' + count + ' total');
+                while (msgIndex < generatedMessages.length && testRunning) {
+                    const waveSize = wavePattern[waveNum % wavePattern.length];
+                    const remaining = generatedMessages.length - msgIndex;
+                    const actual = Math.min(waveSize, remaining);
+                    const waveMsgs = generatedMessages.slice(msgIndex, msgIndex + actual);
+
+                    await sendWave(waveMsgs, waveNum + 1);
+                    log('Wave ' + (waveNum + 1) + ': ' + actual + ' msgs sent (pattern step: ' + waveSize + ')');
+                    msgIndex += actual;
+                    waveNum++;
+
+                    // Delay between waves (if more to send)
+                    if (msgIndex < generatedMessages.length && delay > 0 && testRunning) {
+                        await new Promise(r => setTimeout(r, delay));
+                    }
+                }
+            } else if (delay === 0) {
+                // Burst mode: fire all batches in parallel waves
+                const allBatches = buildBatches(generatedMessages);
+                for (let w = 0; w < allBatches.length && testRunning; w += SEND_PARALLELISM) {
+                    const wave = allBatches.slice(w, w + SEND_PARALLELISM);
+                    try {
+                        const results = await Promise.all(wave.map(b => sendOneBatch(b)));
+                        const totalOk = results.reduce((a, b) => a + b, 0);
+                        updateMetrics();
+                        log('Sent wave ' + (Math.floor(w / SEND_PARALLELISM) + 1) + ': ' + totalOk + ' msgs (' + wave.length + ' parallel batches)');
+                    } catch (e) {
+                        log('ERROR sending wave: ' + e.message);
+                    }
+                }
+            } else {
+                // Paced mode: sequential sends with delay
+                const allBatches = buildBatches(generatedMessages);
+                for (let bi = 0; bi < allBatches.length; bi++) {
+                    if (!testRunning) break;
+                    try {
+                        const ok = await sendOneBatch(allBatches[bi]);
+                        updateMetrics();
+                        log('Sent batch ' + (bi + 1) + ': ' + ok + ' msgs');
+                    } catch (e) {
+                        log('ERROR sending batch: ' + e.message);
+                    }
+                    if (delay > 0 && testRunning) {
+                        let actualDelay = delay;
+                        if (profile === 'ramp') {
+                            const progress = bi / allBatches.length;
+                            actualDelay = Math.max(10, Math.round(delay * (1 - progress)));
+                        }
+                        await new Promise(r => setTimeout(r, actualDelay));
+                    }
+                }
+            }
+
+            setStatus('Injection complete (' + sentCount + ' sent). Waiting for results...');
+            log('Injection complete: ' + sentCount + ' messages sent.');
+            document.getElementById('btnRun').disabled = false;
+        }
+
+        function stopTest() {
+            testRunning = false;
+            if (pollInterval) {
+                if (pollInterval.cancel) pollInterval.cancel();
+                else clearInterval(pollInterval);
+                pollInterval = null;
+            }
+            document.getElementById('btnRun').disabled = false;
+            document.getElementById('btnStop').disabled = true;
+            setStatus('Test stopped.');
+            log('Test stopped by user.');
+        }
+
+        // =====================================================================
+        // Results polling
+        // =====================================================================
+        async function startPolling() {
+            if (!initClients()) return;
+            const resultsQName = document.getElementById('resultsQueueUrl').value.trim();
+            if (!resultsQName) {
+                log('ERROR: No results queue configured.');
+                return;
+            }
+            try {
+                const resultsQueueUrl = await resolveQueueUrl(resultsQName);
+                startPollingWithUrl(resultsQueueUrl);
+            } catch (e) {
+                log('ERROR resolving results queue: ' + e.message);
+            }
+        }
+
+        function startPollingWithUrl(resultsQueueUrl) {
+            if (pollInterval) { clearInterval(pollInterval); pollInterval = null; }
+
+            const PARALLEL_POLLS = 5;  // 5 x 10 = up to 50 msgs per tick
+            log('Polling results queue (' + PARALLEL_POLLS + ' parallel receivers, 50ms loop)...');
+            let polling = true;
+            pollInterval = { cancel: () => { polling = false; } };
+
+            function processMessages(messages) {
+                if (!messages || messages.length === 0) return [];
+                const receiveTime = Date.now();
+                const deletePromises = [];
+
+                for (const msg of messages) {
+                    let parsed;
+                    try {
+                        parsed = JSON.parse(msg.Body);
+                    } catch (_) {
+                        parsed = {};
+                    }
+
+                    // Deduplicate: SQS standard queues are at-least-once,
+                    // and our parallel polling amplifies duplicates
+                    const oppId = parsed.opportunity_id;
+                    if (oppId && receivedIds.has(oppId)) {
+                        // Still delete the duplicate from the queue
+                        deletePromises.push(
+                            sqsClient.deleteMessage({
+                                QueueUrl: resultsQueueUrl,
+                                ReceiptHandle: msg.ReceiptHandle,
+                            }).promise()
+                        );
+                        continue; // skip counting/latency for duplicates
+                    }
+                    if (oppId) receivedIds.add(oppId);
+                    receivedCount++;
+
+                    // Calculate per-message latency (browser round-trip)
+                    let msgLatencyMs = null;
+                    if (parsed.opportunity_id) {
+                        const sentTime = sendTimes.get(parsed.opportunity_id);
+                        if (sentTime) {
+                            msgLatencyMs = receiveTime - sentTime;
+                            latencies.push(msgLatencyMs);
+                        } else if (testStartTime) {
+                            msgLatencyMs = receiveTime - testStartTime;
+                            latencies.push(msgLatencyMs);
+                        }
+                    }
+
+                    addResultRow(parsed, msgLatencyMs);
+
+                    deletePromises.push(
+                        sqsClient.deleteMessage({
+                            QueueUrl: resultsQueueUrl,
+                            ReceiptHandle: msg.ReceiptHandle,
+                        }).promise()
+                    );
+                }
+                return deletePromises;
+            }
+
+            async function pollOnce() {
+                if (!polling) return;
+                try {
+                    // Fire multiple parallel receive calls
+                    const receivePromises = [];
+                    for (let i = 0; i < PARALLEL_POLLS; i++) {
+                        receivePromises.push(
+                            sqsClient.receiveMessage({
+                                QueueUrl: resultsQueueUrl,
+                                MaxNumberOfMessages: 10,
+                                WaitTimeSeconds: 0,
+                            }).promise()
+                        );
+                    }
+
+                    const results = await Promise.all(receivePromises);
+                    const allDeletePromises = [];
+
+                    for (const result of results) {
+                        const deletes = processMessages(result.Messages || []);
+                        allDeletePromises.push(...deletes);
+                    }
+
+                    if (allDeletePromises.length > 0) {
+                        await Promise.all(allDeletePromises);
+                        updateMetrics();
+                    }
+
+                    // Stop polling when all messages are received
+                    if (sentCount > 0 && receivedCount >= sentCount) {
+                        polling = false;
+                        pollInterval = null;
+                        setStatus('Test complete: ' + receivedCount + '/' + sentCount + ' results received.');
+                        log('All results received. Test complete.');
+                        document.getElementById('btnStop').disabled = true;
+                        return;
+                    }
+                } catch (e) {
+                    log('Poll error: ' + e.message);
+                }
+
+                // Schedule next poll after 50ms (faster loop with parallel receives)
+                if (polling) setTimeout(pollOnce, 50);
+            }
+
+            pollOnce();
+        }
+
+        function addResultRow(msg, latencyMs) {
+            const tbody = document.getElementById('resultsBody');
+            const tr = document.createElement('tr');
+
+            const oppId = msg.opportunity_id || '--';
+            const winner = msg.winning_advertiser_id || '--';
+            const bid = msg.winning_bid_amount !== undefined ? '$' + parseFloat(msg.winning_bid_amount).toFixed(2) : '--';
+            const score = msg.winning_score !== undefined ? parseFloat(msg.winning_score).toFixed(4) : '--';
+            const margin = msg.score_margin !== undefined ? parseFloat(msg.score_margin).toFixed(4) : '--';
+            const processed = msg.processed_at || '--';
+
+            // Format latency with color coding
+            let latencyStr = '--';
+            let latencyColor = '';
+            if (latencyMs !== null && latencyMs !== undefined) {
+                latencyStr = latencyMs.toFixed(0) + ' ms';
+                if (latencyMs < 500) {
+                    latencyColor = 'color:#065f46; font-weight:600;'; // green = under target
+                } else if (latencyMs < 1000) {
+                    latencyColor = 'color:#92400e; font-weight:600;'; // amber = over 500ms
+                } else {
+                    latencyColor = 'color:#991b1b; font-weight:600;'; // red = over 1s
+                }
+            }
+
+            tr.innerHTML = '<td class="mono" style="font-size:11px;">' + oppId.substring(0, 8) + '</td>'
+                + '<td class="mono" style="font-size:11px;">' + winner + '</td>'
+                + '<td>' + bid + '</td>'
+                + '<td>' + score + '</td>'
+                + '<td>' + margin + '</td>'
+                + '<td style="' + latencyColor + '">' + latencyStr + '</td>'
+                + '<td class="mono" style="font-size:11px;">' + processed + '</td>';
+
+            // Add to top of table
+            if (tbody.firstChild) {
+                tbody.insertBefore(tr, tbody.firstChild);
+            } else {
+                tbody.appendChild(tr);
+            }
+
+            // Keep table size reasonable
+            while (tbody.children.length > 100) {
+                tbody.removeChild(tbody.lastChild);
+            }
+        }
+
+        // =====================================================================
+        // Metrics
+        // =====================================================================
+        // Rolling buffer of the last 60 latency samples for the sparkline
+        let sparkData = [];
+
+        function updateMetrics() {
+            document.getElementById('metricSent').textContent = sentCount;
+            document.getElementById('metricReceived').textContent = receivedCount;
+
+            if (sentCount > 0) {
+                const pct = Math.round((receivedCount / sentCount) * 100);
+                const bar = document.getElementById('progressBar');
+                bar.style.width = pct + '%';
+                bar.textContent = pct + '%';
+            }
+
+            if (receivedCount > 0 && testStartTime) {
+                const elapsed = (Date.now() - testStartTime) / 1000;
+                const throughput = (receivedCount / elapsed).toFixed(1);
+                document.getElementById('metricThroughput').textContent = throughput;
+            }
+
+            if (latencies.length > 0) {
+                const avg = Math.round(latencies.reduce((a, b) => a + b, 0) / latencies.length);
+                document.getElementById('metricAvgLatency').textContent = avg + ' ms';
+                updatePerfPanel();
+            }
+        }
+
+        function updatePerfPanel() {
+            if (latencies.length === 0) return;
+            const sorted = [...latencies].sort((a, b) => a - b);
+            const n = sorted.length;
+            const mn = sorted[0];
+            const mx = sorted[n - 1];
+            const avg = sorted.reduce((a, b) => a + b, 0) / n;
+            const p95 = sorted[Math.floor(n * 0.95)];
+
+            document.getElementById('perfMin').textContent = mn.toFixed(0) + ' ms';
+            document.getElementById('perfAvg').textContent = avg.toFixed(0) + ' ms';
+            document.getElementById('perfMax').textContent = mx.toFixed(0) + ' ms';
+            document.getElementById('perfP95').textContent = p95.toFixed(0) + ' ms';
+
+            // Latency buckets: fast (<500ms), ok (500–1000ms), slow (>1000ms)
+            const fast = latencies.filter(l => l < 500).length;
+            const ok = latencies.filter(l => l >= 500 && l < 1000).length;
+            const slow = latencies.filter(l => l >= 1000).length;
+            const total = latencies.length;
+            const pFast = ((fast / total) * 100).toFixed(0);
+            const pOk = ((ok / total) * 100).toFixed(0);
+            const pSlow = ((slow / total) * 100).toFixed(0);
+
+            document.getElementById('bucketFast').style.width = pFast + '%';
+            document.getElementById('bucketOk').style.width = pOk + '%';
+            document.getElementById('bucketSlow').style.width = pSlow + '%';
+            document.getElementById('bucketFastLbl').textContent = fast > 0 ? pFast + '% <500ms' : '';
+            document.getElementById('bucketOkLbl').textContent = ok > 0 ? pOk + '% <1s' : '';
+            document.getElementById('bucketSlowLbl').textContent = slow > 0 ? pSlow + '% >1s' : '';
+
+            // Sparkline (last 60 samples)
+            sparkData = latencies.slice(-60);
+            drawSparkline();
+        }
+
+        function drawSparkline() {
+            const canvas = document.getElementById('sparkCanvas');
+            if (!canvas || sparkData.length < 2) return;
+            const ctx = canvas.getContext('2d');
+            const W = canvas.width, H = canvas.height;
+            ctx.clearRect(0, 0, W, H);
+
+            const maxVal = Math.max(...sparkData, 1000);
+            const stepX = W / (sparkData.length - 1);
+
+            // 500ms target line
+            const targetY = H - (500 / maxVal) * H;
+            ctx.strokeStyle = '#cbd5e1';
+            ctx.setLineDash([4, 4]);
+            ctx.beginPath(); ctx.moveTo(0, targetY); ctx.lineTo(W, targetY); ctx.stroke();
+            ctx.setLineDash([]);
+
+            // Sparkline
+            ctx.beginPath();
+            sparkData.forEach((val, i) => {
+                const x = i * stepX;
+                const y = H - (val / maxVal) * H;
+                i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+            });
+            ctx.strokeStyle = '#3b82f6';
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+        }
+
+        // =====================================================================
+        // Cleanup
+        // =====================================================================
+        async function purgeInputQueue() {
+            if (!initClients()) return;
+            const qName = document.getElementById('inputQueueUrl').value.trim();
+            if (!qName) { log('ERROR: No input queue.'); return; }
+            log('Purging input queue...');
+            try {
+                const url = await resolveQueueUrl(qName);
+                await sqsClient.purgeQueue({ QueueUrl: url }).promise();
+                log('Input queue purged.');
+            } catch (e) {
+                if (e.code === 'AWS.SimpleQueueService.PurgeQueueInProgress') {
+                    log('Purge already in progress (SQS allows one per 60 seconds).');
+                } else {
+                    log('ERROR: ' + e.message);
+                }
+            }
+        }
+
+        async function purgeResultsQueue() {
+            if (!initClients()) return;
+            const qName = document.getElementById('resultsQueueUrl').value.trim();
+            if (!qName) { log('ERROR: No results queue.'); return; }
+            log('Purging results queue...');
+            try {
+                const url = await resolveQueueUrl(qName);
+                await sqsClient.purgeQueue({ QueueUrl: url }).promise();
+                log('Results queue purged.');
+            } catch (e) {
+                if (e.code === 'AWS.SimpleQueueService.PurgeQueueInProgress') {
+                    log('Purge already in progress (SQS allows one per 60 seconds).');
+                } else {
+                    log('ERROR: ' + e.message);
+                }
+            }
+        }
+
+        async function cleanupTable() {
+            if (!initClients()) return;
+            const tableName = document.getElementById('tableName').value.trim();
+            if (!tableName) { log('ERROR: No table name.'); return; }
+
+            log('Recreating DynamoDB table (this may take 30-60 seconds)...');
+            setStatus('Recreating DynamoDB table...');
+
+            try {
+                // Delete existing table
+                try {
+                    await dynamoClient.deleteTable({ TableName: tableName }).promise();
+                    log('Deleting table...');
+                    await dynamoClient.waitFor('tableNotExists', { TableName: tableName }).promise();
+                    log('Table deleted.');
+                } catch (e) {
+                    if (e.code !== 'ResourceNotFoundException') throw e;
+                    log('Table does not exist, creating fresh.');
+                }
+
+                // Recreate
+                await dynamoClient.createTable({
+                    TableName: tableName,
+                    AttributeDefinitions: [
+                        { AttributeName: 'opportunity_id', AttributeType: 'S' },
+                    ],
+                    KeySchema: [
+                        { AttributeName: 'opportunity_id', KeyType: 'HASH' },
+                    ],
+                    BillingMode: 'PAY_PER_REQUEST',
+                }).promise();
+                await dynamoClient.waitFor('tableExists', { TableName: tableName }).promise();
+                log('Table recreated: ' + tableName);
+                setStatus('Table recreated.');
+            } catch (e) {
+                log('ERROR: ' + e.message);
+                setStatus('Table cleanup failed.');
+            }
+        }
+
+        async function fullCleanup() {
+            log('Running full cleanup...');
+            await purgeInputQueue();
+            await purgeResultsQueue();
+            await cleanupTable();
+            sentCount = 0;
+            receivedCount = 0;
+            latencies = [];
+            document.getElementById('resultsBody').innerHTML = '';
+            updateMetrics();
+            document.getElementById('progressBar').style.width = '0%';
+            document.getElementById('progressBar').textContent = '0%';
+            log('Full cleanup complete.');
+            setStatus('Ready.');
+        }
+
+        // =====================================================================
+        // Save / Load Config — Multi-Profile (localStorage)
+        // =====================================================================
+        const PROFILES_KEY = 'adflow_profiles';
+        const LEGACY_KEY = 'adflow_test_config';  // migrate old single-config
+
+        function getProfiles() {
+            try {
+                const raw = localStorage.getItem(PROFILES_KEY);
+                return raw ? JSON.parse(raw) : [];
+            } catch (e) { return []; }
+        }
+
+        function putProfiles(profiles) {
+            localStorage.setItem(PROFILES_KEY, JSON.stringify(profiles));
+        }
+
+        function profileLabel(p) {
+            const sid = p.studentId || '(no id)';
+            const keyHint = p.accessKeyId ? p.accessKeyId.substring(0, 8) + '...' : '(no key)';
+            return sid + '  [' + keyHint + ']';
+        }
+
+        function refreshProfileDropdown(selectIndex) {
+            const sel = document.getElementById('savedProfiles');
+            const profiles = getProfiles();
+            sel.innerHTML = '<option value="">\u2014 Select a saved profile \u2014</option>';
+            profiles.forEach((p, i) => {
+                const opt = document.createElement('option');
+                opt.value = String(i);
+                opt.textContent = profileLabel(p);
+                sel.appendChild(opt);
+            });
+            if (selectIndex !== undefined && selectIndex >= 0 && selectIndex < profiles.length) {
+                sel.value = String(selectIndex);
+            }
+        }
+
+        function saveConfig() {
+            const studentId = document.getElementById('studentId').value.trim();
+            const accessKeyId = document.getElementById('accessKeyId').value.trim();
+            const secretAccessKey = document.getElementById('secretAccessKey').value.trim();
+            const region = document.getElementById('region').value;
+            const seed = document.getElementById('seed').value;
+
+            if (!studentId) {
+                log('ERROR: Enter a Student ID before saving.');
+                return;
+            }
+
+            const config = { studentId, accessKeyId, secretAccessKey, region, seed };
+            const profiles = getProfiles();
+
+            // Upsert: if same studentId + accessKeyId exists, update it
+            const existing = profiles.findIndex(p => p.studentId === studentId && p.accessKeyId === accessKeyId);
+            if (existing >= 0) {
+                profiles[existing] = config;
+            } else {
+                profiles.push(config);
+            }
+
+            // Sort profiles alphabetically by studentId
+            profiles.sort((a, b) => (a.studentId || '').localeCompare(b.studentId || ''));
+
+            putProfiles(profiles);
+            const newIdx = profiles.findIndex(p => p.studentId === studentId && p.accessKeyId === accessKeyId);
+            refreshProfileDropdown(newIdx);
+            document.getElementById('saveStatus').textContent = 'Saved!';
+            setTimeout(() => document.getElementById('saveStatus').textContent = '', 3000);
+            log('Profile saved: ' + profileLabel(config));
+        }
+
+        function loadProfile() {
+            const sel = document.getElementById('savedProfiles');
+            if (!sel.value) return;
+            const profiles = getProfiles();
+            const idx = parseInt(sel.value);
+            const p = profiles[idx];
+            if (!p) return;
+
+            if (p.accessKeyId) document.getElementById('accessKeyId').value = p.accessKeyId;
+            if (p.secretAccessKey) document.getElementById('secretAccessKey').value = p.secretAccessKey;
+            if (p.region) document.getElementById('region').value = p.region;
+            if (p.studentId) {
+                document.getElementById('studentId').value = p.studentId;
+                updateConfig();
+            }
+            if (p.seed) document.getElementById('seed').value = p.seed;
+
+            // Reset connection badge when switching profiles
+            const badge = document.getElementById('connectionStatus');
+            badge.textContent = 'Not tested';
+            badge.className = 'connected-badge badge-wait';
+
+            log('Loaded profile: ' + profileLabel(p));
+        }
+
+        function deleteProfile() {
+            const sel = document.getElementById('savedProfiles');
+            if (!sel.value) {
+                log('No profile selected to delete.');
+                return;
+            }
+            const profiles = getProfiles();
+            const idx = parseInt(sel.value);
+            const removed = profiles.splice(idx, 1)[0];
+            putProfiles(profiles);
+            refreshProfileDropdown();
+            document.getElementById('saveStatus').textContent = 'Deleted.';
+            setTimeout(() => document.getElementById('saveStatus').textContent = '', 3000);
+            log('Deleted profile: ' + profileLabel(removed));
+        }
+
+        function clearAllProfiles() {
+            if (!confirm('Delete ALL saved profiles from local storage?')) return;
+            localStorage.removeItem(PROFILES_KEY);
+            localStorage.removeItem(LEGACY_KEY);
+            refreshProfileDropdown();
+            document.getElementById('saveStatus').textContent = 'All cleared.';
+            setTimeout(() => document.getElementById('saveStatus').textContent = '', 3000);
+            log('All saved profiles cleared.');
+        }
+
+        function loadSavedConfig() {
+            // Migrate legacy single-config if it exists
+            try {
+                const legacy = localStorage.getItem(LEGACY_KEY);
+                if (legacy) {
+                    const old = JSON.parse(legacy);
+                    const profiles = getProfiles();
+                    // Only migrate if we don't already have profiles
+                    if (profiles.length === 0 && old.studentId) {
+                        profiles.push(old);
+                        putProfiles(profiles);
+                        log('Migrated legacy config to profiles.');
+                    }
+                    localStorage.removeItem(LEGACY_KEY);
+                }
+            } catch (e) { /* ignore */ }
+
+            refreshProfileDropdown();
+
+            // Auto-load first profile if any exist
+            const profiles = getProfiles();
+            if (profiles.length > 0) {
+                document.getElementById('savedProfiles').value = '0';
+                loadProfile();
+            }
+        }
+
+        // =====================================================================
+        // DynamoDB Table Viewer
+        // =====================================================================
+        async function scanDynamoTable() {
+            if (!initClients()) return;
+            const tableName = document.getElementById('tableName').value.trim();
+            if (!tableName) {
+                log('ERROR: No table name. Enter your Student ID first.');
+                return;
+            }
+
+            const statusEl = document.getElementById('scanStatus');
+            const tbody = document.getElementById('dynamoBody');
+            tbody.innerHTML = '';
+            statusEl.textContent = 'Scanning...';
+            log('Scanning DynamoDB table: ' + tableName + '...');
+
+            try {
+                let items = [];
+                let lastKey = undefined;
+
+                do {
+                    const params = {
+                        TableName: tableName,
+                    };
+                    if (lastKey) params.ExclusiveStartKey = lastKey;
+
+                    const result = await dynamoClient.scan(params).promise();
+                    items = items.concat(result.Items || []);
+                    lastKey = result.LastEvaluatedKey;
+                    statusEl.textContent = 'Scanning... (' + items.length + ' items so far)';
+                } while (lastKey);
+
+                statusEl.textContent = items.length + ' items found.';
+                log('Scan complete: ' + items.length + ' items in table ' + tableName);
+
+                // Helper to extract DynamoDB attribute value
+                function dv(attr) {
+                    if (!attr) return '--';
+                    if (attr.S) return attr.S;
+                    if (attr.N) return attr.N;
+                    if (attr.BOOL !== undefined) return String(attr.BOOL);
+                    return JSON.stringify(attr);
+                }
+
+                // Sort by processed_at descending
+                items.sort((a, b) => {
+                    const ta = dv(a.processed_at);
+                    const tb = dv(b.processed_at);
+                    return tb.localeCompare(ta);
+                });
+
+                for (const item of items) {
+                    const tr = document.createElement('tr');
+                    const oppId = dv(item.opportunity_id);
+                    tr.innerHTML = '<td class="mono" style="font-size:11px;">' + oppId.substring(0, 8) + '</td>'
+                        + '<td class="mono" style="font-size:11px;">' + dv(item.winning_advertiser_id) + '</td>'
+                        + '<td>$' + parseFloat(dv(item.winning_bid_amount) || 0).toFixed(2) + '</td>'
+                        + '<td>' + parseFloat(dv(item.winning_score) || 0).toFixed(4) + '</td>'
+                        + '<td>' + parseFloat(dv(item.score_margin) || 0).toFixed(4) + '</td>'
+                        + '<td>' + dv(item.content_category) + '</td>'
+                        + '<td>' + dv(item.region) + '</td>'
+                        + '<td>' + dv(item.device_type) + '</td>'
+                        + '<td>' + dv(item.num_bids) + '</td>'
+                        + '<td class="mono" style="font-size:11px;">' + dv(item.processed_at) + '</td>';
+                    tbody.appendChild(tr);
+                }
+            } catch (e) {
+                statusEl.textContent = 'Error: ' + e.code;
+                log('ERROR scanning table: ' + e.message);
+            }
+        }
+
+        // Initialize
+        loadSavedConfig();
+        updateProfile();
+    </script>
+
+</body>
+
+</html>

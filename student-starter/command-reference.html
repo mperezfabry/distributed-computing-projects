@@ -1,0 +1,741 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AdFlow Command Reference</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Serif:wght@400;600&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --ink: #1a1a2e;
+            --ink-soft: #4a4a6a;
+            --ink-faint: #8888aa;
+            --rule: #e0e0ee;
+            --bg: #fafafa;
+            --code-bg: #f0f0f8;
+            --accent: #1a4fa0;
+            --accent-lt: #e8eef9;
+            --gold: #b07d20;
+            --gold-lt: #fdf6e3;
+            --green: #1a6b3a;
+            --green-lt: #eaf5ee;
+            --red: #9b1c1c;
+            --red-lt: #fef2f2;
+        }
+
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'IBM Plex Sans', sans-serif;
+            font-size: 15px;
+            line-height: 1.75;
+            color: var(--ink);
+            background: var(--bg);
+            max-width: 860px;
+            margin: 0 auto;
+            padding: 60px 48px 120px;
+        }
+
+        .doc-header {
+            border-bottom: 3px solid var(--ink);
+            padding-bottom: 28px;
+            margin-bottom: 52px;
+        }
+
+        .doc-meta {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 11px;
+            letter-spacing: .08em;
+            text-transform: uppercase;
+            color: var(--ink-faint);
+            margin-bottom: 12px;
+        }
+
+        h1.doc-title {
+            font-family: 'IBM Plex Serif', serif;
+            font-size: 34px;
+            font-weight: 600;
+            line-height: 1.2;
+            color: var(--ink);
+            margin-bottom: 10px;
+        }
+
+        .doc-sub {
+            font-size: 14px;
+            color: var(--ink-soft);
+        }
+
+        h2.part {
+            font-family: 'IBM Plex Serif', serif;
+            font-size: 22px;
+            font-weight: 600;
+            color: var(--ink);
+            margin: 52px 0 18px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid var(--ink);
+            display: flex;
+            align-items: baseline;
+            gap: 12px;
+        }
+
+        h2.part .part-num {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 11px;
+            letter-spacing: .1em;
+            text-transform: uppercase;
+            color: var(--ink-faint);
+            font-weight: 400;
+        }
+
+        h3.section {
+            font-family: 'IBM Plex Sans', sans-serif;
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--accent);
+            margin: 28px 0 10px;
+        }
+
+        h4.subsection {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--ink);
+            margin: 22px 0 8px;
+            letter-spacing: .02em;
+        }
+
+        p {
+            margin-bottom: 14px;
+        }
+
+        p:last-child {
+            margin-bottom: 0;
+        }
+
+        .callout {
+            border-left: 4px solid var(--accent);
+            background: var(--accent-lt);
+            padding: 16px 20px;
+            margin: 24px 0;
+            border-radius: 0 6px 6px 0;
+        }
+
+        .callout.gold {
+            border-color: var(--gold);
+            background: var(--gold-lt);
+        }
+
+        .callout.green {
+            border-color: var(--green);
+            background: var(--green-lt);
+        }
+
+        .callout.red {
+            border-color: var(--red);
+            background: var(--red-lt);
+        }
+
+        .callout-label {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 10px;
+            letter-spacing: .1em;
+            text-transform: uppercase;
+            font-weight: 600;
+            margin-bottom: 6px;
+            color: var(--ink-soft);
+        }
+
+        .callout p {
+            font-size: 14px;
+        }
+
+        .callout ul,
+        .callout ol {
+            font-size: 14px;
+            margin: 8px 0 0 22px;
+        }
+
+        .callout li {
+            margin-bottom: 5px;
+        }
+
+        .table-wrap {
+            overflow-x: auto;
+            margin: 18px 0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13.5px;
+        }
+
+        thead th {
+            background: var(--ink);
+            color: #fff;
+            font-weight: 600;
+            font-family: 'IBM Plex Sans', sans-serif;
+            text-align: left;
+            padding: 10px 14px;
+        }
+
+        tbody tr:nth-child(even) {
+            background: #f4f4f8;
+        }
+
+        tbody td {
+            padding: 9px 14px;
+            border-bottom: 1px solid var(--rule);
+            vertical-align: top;
+        }
+
+        tbody td:first-child {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 12px;
+            color: var(--accent);
+        }
+
+        /* Command column — override first-child mono for label col, apply mono to cmd col */
+        .cmd-table td:nth-child(1) {
+            color: var(--ink-soft);
+            font-family: 'IBM Plex Sans', sans-serif;
+            font-size: 13.5px;
+            white-space: nowrap;
+            width: 26%;
+        }
+
+        .cmd-table td:nth-child(2) {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 11.5px;
+            color: var(--ink);
+            word-break: break-all;
+        }
+
+        pre {
+            background: var(--code-bg);
+            border: 1px solid var(--rule);
+            border-radius: 6px;
+            padding: 18px 22px;
+            margin: 14px 0;
+            overflow-x: auto;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 12.5px;
+            line-height: 1.65;
+            color: var(--ink);
+        }
+
+        code {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 12.5px;
+            background: var(--code-bg);
+            padding: 1px 5px;
+            border-radius: 3px;
+        }
+
+        ul,
+        ol {
+            margin: 10px 0 14px 24px;
+        }
+
+        li {
+            margin-bottom: 6px;
+        }
+
+        .doc-footer {
+            margin-top: 72px;
+            padding-top: 20px;
+            border-top: 1px solid var(--rule);
+            font-size: 13px;
+            color: var(--ink-soft);
+        }
+    </style>
+</head>
+
+<body>
+
+    <header class="doc-header">
+        <div class="doc-meta">Project 1 &nbsp;·&nbsp; AdFlow &nbsp;·&nbsp; Distributed Systems for Data Science</div>
+        <h1 class="doc-title">Command Reference</h1>
+        <div class="doc-sub">A consolidated lookup of CLI commands, SAM patterns, and boto3 examples used throughout the
+            project. Replace <code>YOURID</code> with your student ID everywhere.</div>
+    </header>
+
+
+    <!-- ══════════════════════════════════════════════════════════════════
+     SAM
+══════════════════════════════════════════════════════════════════ -->
+    <h2 class="part"><span class="part-num">SAM</span> Serverless Application Model</h2>
+
+    <div class="table-wrap">
+        <table class="cmd-table">
+            <thead>
+                <tr>
+                    <th>What</th>
+                    <th>Command</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Build the project</td>
+                    <td>sam build</td>
+                </tr>
+                <tr>
+                    <td>Deploy (first time — interactive)</td>
+                    <td>sam deploy --guided --stack-name adflow-YOURID</td>
+                </tr>
+                <tr>
+                    <td>Deploy (subsequent — uses saved config)</td>
+                    <td>sam deploy</td>
+                </tr>
+                <tr>
+                    <td>View stack outputs</td>
+                    <td>aws cloudformation describe-stacks --stack-name adflow-YOURID --query "Stacks[0].Outputs"</td>
+                </tr>
+                <tr>
+                    <td>Invoke Lambda locally (debugging)</td>
+                    <td>sam local invoke WorkerFunction -e event.json</td>
+                </tr>
+                <tr>
+                    <td>Tear down all resources</td>
+                    <td>sam delete --stack-name adflow-YOURID</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="callout">
+        <div class="callout-label">samconfig.toml</div>
+        <p>After the first <code>--guided</code> deploy, SAM writes your choices to <code>samconfig.toml</code>.
+            Subsequent <code>sam deploy</code> calls read from that file — you do not need to re-enter the stack name or
+            region. Do not commit this file if it contains sensitive values, but it is safe to keep it locally.</p>
+    </div>
+
+
+    <!-- ══════════════════════════════════════════════════════════════════
+     SQS
+══════════════════════════════════════════════════════════════════ -->
+    <h2 class="part"><span class="part-num">SQS</span> Simple Queue Service</h2>
+
+    <div class="table-wrap">
+        <table class="cmd-table">
+            <thead>
+                <tr>
+                    <th>What</th>
+                    <th>Command</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Get queue URL</td>
+                    <td>aws sqs get-queue-url --queue-name adflow-YOURID-input</td>
+                </tr>
+                <tr>
+                    <td>Check message count</td>
+                    <td>aws sqs get-queue-attributes --queue-url QUEUE_URL --attribute-names ApproximateNumberOfMessages
+                    </td>
+                </tr>
+                <tr>
+                    <td>Send a single test message</td>
+                    <td>aws sqs send-message --queue-url QUEUE_URL --message-body '{"test": true}'</td>
+                </tr>
+                <tr>
+                    <td>Peek at messages (non-destructive)</td>
+                    <td>aws sqs receive-message --queue-url QUEUE_URL --max-number-of-messages 5</td>
+                </tr>
+                <tr>
+                    <td>Purge all messages</td>
+                    <td>aws sqs purge-queue --queue-url QUEUE_URL</td>
+                </tr>
+                <tr>
+                    <td>List queues (filtered)</td>
+                    <td>aws sqs list-queues --queue-name-prefix adflow-YOURID</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <h3 class="section">SQS in Python (boto3)</h3>
+
+    <div class="callout green">
+        <div class="callout-label">boto3 Reference — SQS</div>
+    </div>
+    <pre>import boto3, json
+
+sqs = boto3.client("sqs")
+
+# Send a message
+sqs.send_message(
+    QueueUrl="https://sqs.us-east-1.amazonaws.com/123456/adflow-YOURID-input",
+    MessageBody=json.dumps({"opportunity_id": "test-001", ...}),
+)
+
+# Receive and delete messages
+response = sqs.receive_message(QueueUrl=QUEUE_URL, MaxNumberOfMessages=10)
+for msg in response.get("Messages", []):
+    body = json.loads(msg["Body"])
+    # ... process ...
+    sqs.delete_message(QueueUrl=QUEUE_URL, ReceiptHandle=msg["ReceiptHandle"])</pre>
+
+    <div class="callout">
+        <div class="callout-label">Note — receive-message is destructive</div>
+        <p>Calling <code>receive-message</code> from the CLI or boto3 makes each received message invisible for the
+            queue's visibility timeout period. If you do not delete it, it will eventually reappear. This is intentional
+            SQS behavior — use it only to inspect, not to drain.</p>
+    </div>
+
+
+    <!-- ══════════════════════════════════════════════════════════════════
+     DYNAMODB
+══════════════════════════════════════════════════════════════════ -->
+    <h2 class="part"><span class="part-num">DynamoDB</span> Results Table</h2>
+
+    <div class="table-wrap">
+        <table class="cmd-table">
+            <thead>
+                <tr>
+                    <th>What</th>
+                    <th>Command</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Describe table</td>
+                    <td>aws dynamodb describe-table --table-name adflow-YOURID-results</td>
+                </tr>
+                <tr>
+                    <td>Count all items</td>
+                    <td>aws dynamodb scan --table-name adflow-YOURID-results --select COUNT</td>
+                </tr>
+                <tr>
+                    <td>Get one item by key</td>
+                    <td>aws dynamodb get-item --table-name adflow-YOURID-results --key '{"opportunity_id": {"S":
+                        "test-001"}}'</td>
+                </tr>
+                <tr>
+                    <td>Scan first 5 items</td>
+                    <td>aws dynamodb scan --table-name adflow-YOURID-results --limit 5</td>
+                </tr>
+                <tr>
+                    <td>Delete table (for reset)</td>
+                    <td>aws dynamodb delete-table --table-name adflow-YOURID-results</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <h3 class="section">DynamoDB in Python (boto3)</h3>
+
+    <div class="callout green">
+        <div class="callout-label">boto3 Reference — DynamoDB</div>
+    </div>
+    <pre>import boto3
+from decimal import Decimal
+
+dynamodb = boto3.resource("dynamodb")
+table = dynamodb.Table("adflow-YOURID-results")
+
+# Write an item — float values MUST be Decimal
+table.put_item(Item={
+    "opportunity_id":       "test-001",
+    "winning_advertiser_id": "adv_001",
+    "winning_bid_amount":   Decimal("3.50"),
+    "winning_score":        Decimal("6.7375"),
+    "score_margin":         Decimal("0.9625"),
+    "processed_at":         "2025-03-10T20:15:01Z",
+})
+
+# Read one item
+item = table.get_item(Key={"opportunity_id": "test-001"})["Item"]
+
+# Scan all items (for analysis)
+items = table.scan()["Items"]
+
+# Load into Pandas — convert Decimal columns to float
+import pandas as pd
+df = pd.DataFrame(items)
+df["winning_bid_amount"] = df["winning_bid_amount"].astype(float)
+df["winning_score"]      = df["winning_score"].astype(float)
+df["score_margin"]       = df["score_margin"].astype(float)</pre>
+
+    <div class="callout gold">
+        <div class="callout-label">Decimal Requirement</div>
+        <p>DynamoDB stores numbers as its own <code>N</code> type. The boto3 Python resource client maps <code>N</code>
+            to <code>Decimal</code>, not <code>float</code>. You must convert when writing:
+            <code>Decimal(str(value))</code>. When reading into Pandas, convert back with <code>.astype(float)</code>.
+            Forgetting this in your Lambda will cause a <code>TypeError</code> at the <code>put_item</code> call.</p>
+    </div>
+
+
+    <!-- ══════════════════════════════════════════════════════════════════
+     LAMBDA
+══════════════════════════════════════════════════════════════════ -->
+    <h2 class="part"><span class="part-num">Lambda</span> Worker Function</h2>
+
+    <div class="table-wrap">
+        <table class="cmd-table">
+            <thead>
+                <tr>
+                    <th>What</th>
+                    <th>Command</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Verify function exists</td>
+                    <td>aws lambda get-function --function-name adflow-YOURID-worker</td>
+                </tr>
+                <tr>
+                    <td>Invoke synchronously (for debugging)</td>
+                    <td>aws lambda invoke --function-name adflow-YOURID-worker --payload file://event.json output.json
+                    </td>
+                </tr>
+                <tr>
+                    <td>View environment variables</td>
+                    <td>aws lambda get-function-configuration --function-name adflow-YOURID-worker --query
+                        "Environment.Variables"</td>
+                </tr>
+                <tr>
+                    <td>List SQS event source mappings</td>
+                    <td>aws lambda list-event-source-mappings --function-name adflow-YOURID-worker</td>
+                </tr>
+                <tr>
+                    <td>Redeploy after code changes</td>
+                    <td>sam build &amp;&amp; sam deploy</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <h3 class="section">Minimal SQS Event for Local Invoke</h3>
+
+    <pre>{
+  "Records": [
+    {
+      "messageId": "test-msg-001",
+      "body": "{\"opportunity_id\": \"opp-001\", \"content_category\": \"sports\", \"device_type\": \"mobile\", \"timestamp\": \"2025-03-10T14:30:00Z\", \"bids\": [{\"advertiser_id\": \"adv_sportswear_01\", \"bid_amount\": 3.50, \"category\": \"sportswear\"}, {\"advertiser_id\": \"adv_finance_01\", \"bid_amount\": 5.00, \"category\": \"finance\"}]}"
+    }
+  ]
+}</pre>
+
+    <p>Save this as <code>event.json</code> in the project root and pass it to <code>sam local invoke</code> or
+        <code>aws lambda invoke --payload file://event.json</code> to test your handler directly.</p>
+
+
+    <!-- ══════════════════════════════════════════════════════════════════
+     CLOUDWATCH
+══════════════════════════════════════════════════════════════════ -->
+    <h2 class="part"><span class="part-num">CloudWatch</span> Logs</h2>
+
+    <p>Your Lambda writes all <code>logger.info()</code> and <code>logger.error()</code> output to
+        <code>/aws/lambda/adflow-YOURID-worker</code>. CloudWatch is the primary debugging tool once your Lambda is
+        deployed — the local unit tests will not catch every problem that appears at runtime.</p>
+
+    <div class="table-wrap">
+        <table class="cmd-table">
+            <thead>
+                <tr>
+                    <th>What</th>
+                    <th>Command</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Live tail (follow new log lines)</td>
+                    <td>aws logs tail /aws/lambda/adflow-YOURID-worker --follow</td>
+                </tr>
+                <tr>
+                    <td>Search for batch summaries</td>
+                    <td>aws logs filter-log-events --log-group-name /aws/lambda/adflow-YOURID-worker --filter-pattern
+                        "Batch complete"</td>
+                </tr>
+                <tr>
+                    <td>Search for errors only</td>
+                    <td>aws logs filter-log-events --log-group-name /aws/lambda/adflow-YOURID-worker --filter-pattern
+                        "ERROR"</td>
+                </tr>
+                <tr>
+                    <td>Console path</td>
+                    <td>CloudWatch &gt; Log groups &gt; /aws/lambda/adflow-YOURID-worker</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <h3 class="section">Logging Best Practices</h3>
+
+    <div class="callout green">
+        <div class="callout-label">boto3 Reference — Logging</div>
+    </div>
+    <pre>import logging, time
+
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
+
+# Measure batch and per-message processing time
+start = time.perf_counter()
+# ... do work ...
+elapsed_ms = (time.perf_counter() - start) * 1000
+logger.info("Processed %s in %.1f ms", opportunity_id, elapsed_ms)
+
+# Log a structured batch summary
+logger.info(
+    "Batch complete: %d/%d succeeded in %.1f ms | failures=%d",
+    success_count, total_count, elapsed_ms, failure_count,
+)
+
+# NEVER use print() in Lambda
+# print() outputs to stdout without a timestamp or log level field
+# logger.info() and logger.error() include both — use them</pre>
+
+
+    <!-- ══════════════════════════════════════════════════════════════════
+     TESTING
+══════════════════════════════════════════════════════════════════ -->
+    <h2 class="part"><span class="part-num">Testing</span> Local Unit Tests</h2>
+
+    <div class="table-wrap">
+        <table class="cmd-table">
+            <thead>
+                <tr>
+                    <th>What</th>
+                    <th>Command</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Install test dependencies</td>
+                    <td>pip install "moto[sqs,dynamodb]" pytest</td>
+                </tr>
+                <tr>
+                    <td>Run all tests (verbose)</td>
+                    <td>pytest worker/tests/ -v</td>
+                </tr>
+                <tr>
+                    <td>Run one test class</td>
+                    <td>pytest worker/tests/test_handler.py::TestComputeScore -v</td>
+                </tr>
+                <tr>
+                    <td>Run with print output visible</td>
+                    <td>pytest worker/tests/ -v -s</td>
+                </tr>
+                <tr>
+                    <td>Stop at first failure</td>
+                    <td>pytest worker/tests/ -v -x</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="callout">
+        <div class="callout-label">How the Tests Work</div>
+        <p>The tests use <code>moto</code> to mock SQS and DynamoDB locally — no AWS credentials or real AWS resources
+            are needed. The <code>@mock_aws</code> decorator intercepts all boto3 calls and routes them to in-memory
+            fakes. This lets you validate your scoring logic, winner selection, and batch processing before deploying
+            anything.</p>
+    </div>
+
+
+    <!-- ══════════════════════════════════════════════════════════════════
+     CLEANUP
+══════════════════════════════════════════════════════════════════ -->
+    <h2 class="part"><span class="part-num">Cleanup</span> Resetting Your Environment</h2>
+
+    <div class="table-wrap">
+        <table class="cmd-table">
+            <thead>
+                <tr>
+                    <th>What</th>
+                    <th>Command</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Full cleanup (purge queues + recreate table)</td>
+                    <td>python cleanup.py --student-id YOURID --region us-east-1</td>
+                </tr>
+                <tr>
+                    <td>Purge queues only (skip table)</td>
+                    <td>python cleanup.py --student-id YOURID --skip-table</td>
+                </tr>
+                <tr>
+                    <td>Tear down entire stack</td>
+                    <td>sam delete --stack-name adflow-YOURID</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="callout gold">
+        <div class="callout-label">Cost Safety</div>
+        <ul>
+            <li>Run <code>sam delete</code> when you are done for the day — idle queues accumulate message retention
+                costs.</li>
+            <li>DynamoDB uses PAY_PER_REQUEST billing — you pay only for what you use, not for idle capacity.</li>
+            <li>Lambda has a free tier of 1 million invocations per month. A 500-message Burst test uses approximately
+                50 invocations.</li>
+            <li>Check your AWS billing dashboard if anything looks unexpected.</li>
+        </ul>
+    </div>
+
+
+    <!-- ══════════════════════════════════════════════════════════════════
+     CONSOLE PATHS
+══════════════════════════════════════════════════════════════════ -->
+    <h2 class="part"><span class="part-num">Console</span> AWS Console Quick Paths</h2>
+
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Service</th>
+                    <th>Console Navigation Path</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Lambda function</td>
+                    <td>Lambda &gt; Functions &gt; adflow-YOURID-worker</td>
+                </tr>
+                <tr>
+                    <td>Lambda environment variables</td>
+                    <td>Lambda &gt; Functions &gt; adflow-YOURID-worker &gt; Configuration &gt; Environment variables
+                    </td>
+                </tr>
+                <tr>
+                    <td>SQS queues</td>
+                    <td>SQS &gt; Queues &gt; filter by "adflow-YOURID"</td>
+                </tr>
+                <tr>
+                    <td>DynamoDB table</td>
+                    <td>DynamoDB &gt; Tables &gt; adflow-YOURID-results &gt; Explore items</td>
+                </tr>
+                <tr>
+                    <td>CloudWatch logs</td>
+                    <td>CloudWatch &gt; Log groups &gt; /aws/lambda/adflow-YOURID-worker</td>
+                </tr>
+                <tr>
+                    <td>CloudFormation stack</td>
+                    <td>CloudFormation &gt; Stacks &gt; adflow-YOURID</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+
+    <footer class="doc-footer">
+        Command Reference &nbsp;·&nbsp; Project 1: AdFlow &nbsp;·&nbsp; Distributed Systems for Data Science
+        &nbsp;·&nbsp; New College of Florida
+    </footer>
+
+</body>
+
+</html>

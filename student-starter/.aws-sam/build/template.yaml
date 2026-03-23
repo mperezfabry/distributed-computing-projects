@@ -1,0 +1,113 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: 'AdFlow Ad Selection Worker Deploys the complete pipeline: SQS input
+  queue, SQS results queue, DynamoDB results table, and the Lambda worker with SQS
+  trigger.
+
+  '
+Parameters:
+  StudentId:
+    Type: String
+    Description: 'Your student ID (e.g., gsalu). All resources will be named adflow-{StudentId}-{resource}.
+
+      '
+    AllowedPattern: '[a-z0-9]+'
+    ConstraintDescription: Lowercase letters and numbers only.
+Resources:
+  InputQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName:
+        Fn::Sub: adflow-${StudentId}-input
+      VisibilityTimeout: 60
+      MessageRetentionPeriod: 86400
+  ResultsQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName:
+        Fn::Sub: adflow-${StudentId}-results
+      VisibilityTimeout: 30
+      MessageRetentionPeriod: 86400
+  ResultsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName:
+        Fn::Sub: adflow-${StudentId}-results
+      AttributeDefinitions:
+      - AttributeName: opportunity_id
+        AttributeType: S
+      KeySchema:
+      - AttributeName: opportunity_id
+        KeyType: HASH
+      BillingMode: PAY_PER_REQUEST
+  WorkerFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName:
+        Fn::Sub: adflow-${StudentId}-worker
+      Handler: lambda_handler.lambda_handler
+      Runtime: python3.12
+      CodeUri: WorkerFunction
+      MemorySize: 256
+      Timeout: 30
+      Environment:
+        Variables:
+          RESULTS_QUEUE_URL:
+            Ref: ResultsQueue
+          DYNAMO_TABLE_NAME:
+            Ref: ResultsTable
+      Policies:
+      - SQSPollerPolicy:
+          QueueName:
+            Fn::GetAtt:
+            - InputQueue
+            - QueueName
+      - SQSSendMessagePolicy:
+          QueueName:
+            Fn::GetAtt:
+            - ResultsQueue
+            - QueueName
+      - DynamoDBCrudPolicy:
+          TableName:
+            Ref: ResultsTable
+      Events:
+        SQSTrigger:
+          Type: SQS
+          Properties:
+            Queue:
+              Fn::GetAtt:
+              - InputQueue
+              - Arn
+            BatchSize: 10
+            MaximumBatchingWindowInSeconds: 0
+            FunctionResponseTypes:
+            - ReportBatchItemFailures
+    Metadata:
+      SamResourceId: WorkerFunction
+Outputs:
+  InputQueueUrl:
+    Description: URL of your input queue (paste into test apparatus)
+    Value:
+      Ref: InputQueue
+  InputQueueArn:
+    Description: ARN of your input queue (needed for competition subscription)
+    Value:
+      Fn::GetAtt:
+      - InputQueue
+      - Arn
+  ResultsQueueUrl:
+    Description: URL of your results queue
+    Value:
+      Ref: ResultsQueue
+  TableName:
+    Description: Name of your DynamoDB results table
+    Value:
+      Ref: ResultsTable
+  WorkerFunctionName:
+    Description: Name of your Lambda function
+    Value:
+      Ref: WorkerFunction
+  WorkerLogGroup:
+    Description: CloudWatch log group for viewing Lambda logs
+    Value:
+      Fn::Sub: /aws/lambda/adflow-${StudentId}-worker

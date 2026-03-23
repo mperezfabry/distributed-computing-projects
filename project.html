@@ -1,0 +1,2132 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Week 4 — Building a Real-Time Ad Selection Pipeline</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Serif:wght@400;600&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --ink: #1a1a2e;
+            --ink-soft: #4a4a6a;
+            --ink-faint: #8888aa;
+            --rule: #e0e0ee;
+            --bg: #fafafa;
+            --bg-warm: #fffdf7;
+            --accent: #1a4fa0;
+            --accent-lt: #e8eef9;
+            --gold: #b07d20;
+            --gold-lt: #fdf6e3;
+            --green: #1a6b3a;
+            --green-lt: #eaf5ee;
+            --red: #9b1c1c;
+            --red-lt: #fef2f2;
+            --code-bg: #f0f0f8;
+            --you: #b07d20;
+            --provided: #1a6b3a;
+        }
+
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'IBM Plex Sans', sans-serif;
+            font-size: 15px;
+            line-height: 1.75;
+            color: var(--ink);
+            background: var(--bg);
+            max-width: 860px;
+            margin: 0 auto;
+            padding: 60px 48px 120px;
+        }
+
+        /* HEADER */
+        .doc-header {
+            border-bottom: 3px solid var(--ink);
+            padding-bottom: 28px;
+            margin-bottom: 52px;
+        }
+
+        .doc-meta {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 11px;
+            letter-spacing: .08em;
+            text-transform: uppercase;
+            color: var(--ink-faint);
+            margin-bottom: 12px;
+        }
+
+        h1.doc-title {
+            font-family: 'IBM Plex Serif', serif;
+            font-size: 34px;
+            font-weight: 600;
+            line-height: 1.2;
+            color: var(--ink);
+            margin-bottom: 10px;
+        }
+
+        .doc-sub {
+            font-size: 14px;
+            color: var(--ink-soft);
+        }
+
+        /* PART HEADINGS */
+        h2.part {
+            font-family: 'IBM Plex Serif', serif;
+            font-size: 22px;
+            font-weight: 600;
+            color: var(--ink);
+            margin: 56px 0 20px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid var(--ink);
+            display: flex;
+            align-items: baseline;
+            gap: 12px;
+        }
+
+        h2.part .part-num {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 11px;
+            letter-spacing: .1em;
+            text-transform: uppercase;
+            color: var(--ink-faint);
+            font-weight: 400;
+        }
+
+        /* SECTION HEADINGS */
+        h3.section {
+            font-family: 'IBM Plex Sans', sans-serif;
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--accent);
+            margin: 32px 0 10px;
+        }
+
+        h4.subsection {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--ink);
+            margin: 24px 0 8px;
+            letter-spacing: .02em;
+        }
+
+        /* BODY TEXT */
+        p {
+            margin-bottom: 14px;
+        }
+
+        p:last-child {
+            margin-bottom: 0;
+        }
+
+        /* CALLOUT BOXES */
+        .callout {
+            border-left: 4px solid var(--accent);
+            background: var(--accent-lt);
+            padding: 16px 20px;
+            margin: 24px 0;
+            border-radius: 0 6px 6px 0;
+        }
+
+        .callout.gold {
+            border-color: var(--gold);
+            background: var(--gold-lt);
+        }
+
+        .callout.green {
+            border-color: var(--green);
+            background: var(--green-lt);
+        }
+
+        .callout.red {
+            border-color: var(--red);
+            background: var(--red-lt);
+        }
+
+        .callout-label {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 10px;
+            letter-spacing: .1em;
+            text-transform: uppercase;
+            font-weight: 600;
+            margin-bottom: 6px;
+            color: var(--ink-soft);
+        }
+
+        .callout p {
+            font-size: 14px;
+        }
+
+        /* RESPONSIBILITY BADGE */
+        .responsibility {
+            display: flex;
+            gap: 0;
+            margin: 28px 0;
+            border: 1.5px solid var(--rule);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .resp-item {
+            flex: 1;
+            padding: 16px 18px;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        .resp-item .resp-label {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 10px;
+            letter-spacing: .1em;
+            text-transform: uppercase;
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+
+        .resp-item.provided {
+            background: var(--green-lt);
+        }
+
+        .resp-item.provided .resp-label {
+            color: var(--provided);
+        }
+
+        .resp-item.yours {
+            background: var(--gold-lt);
+            border-left: 3px solid var(--gold);
+            border-right: 3px solid var(--gold);
+        }
+
+        .resp-item.yours .resp-label {
+            color: var(--you);
+        }
+
+        /* LISTS */
+        ul,
+        ol {
+            margin: 10px 0 16px 24px;
+        }
+
+        li {
+            margin-bottom: 6px;
+        }
+
+        li strong {
+            color: var(--ink);
+        }
+
+        /* CODE */
+        pre {
+            background: var(--code-bg);
+            border: 1px solid var(--rule);
+            border-radius: 6px;
+            padding: 18px 22px;
+            margin: 16px 0;
+            overflow-x: auto;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 12.5px;
+            line-height: 1.65;
+            color: var(--ink);
+        }
+
+        code {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 12.5px;
+            background: var(--code-bg);
+            padding: 1px 5px;
+            border-radius: 3px;
+        }
+
+        /* TABLES */
+        .table-wrap {
+            overflow-x: auto;
+            margin: 18px 0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13.5px;
+        }
+
+        thead th {
+            background: var(--ink);
+            color: #fff;
+            font-weight: 600;
+            font-family: 'IBM Plex Sans', sans-serif;
+            text-align: left;
+            padding: 10px 14px;
+            letter-spacing: .01em;
+        }
+
+        tbody tr:nth-child(even) {
+            background: #f4f4f8;
+        }
+
+        tbody td {
+            padding: 9px 14px;
+            border-bottom: 1px solid var(--rule);
+            vertical-align: top;
+        }
+
+        tbody td:first-child {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 12px;
+            color: var(--accent);
+        }
+
+        /* TASK BLOCKS */
+        .task {
+            border: 1.5px solid var(--rule);
+            border-radius: 8px;
+            margin: 20px 0;
+            overflow: hidden;
+        }
+
+        .task-header {
+            background: var(--ink);
+            color: #fff;
+            padding: 10px 18px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .task-num {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 10px;
+            letter-spacing: .1em;
+            text-transform: uppercase;
+            opacity: .6;
+        }
+
+        .task-name {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .task-body {
+            padding: 16px 18px;
+            font-size: 14px;
+        }
+
+        /* STEP BLOCKS */
+        .step {
+            display: flex;
+            gap: 20px;
+            margin: 20px 0;
+            align-items: flex-start;
+        }
+
+        .step-num {
+            flex-shrink: 0;
+            width: 32px;
+            height: 32px;
+            background: var(--accent);
+            color: #fff;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 13px;
+            font-weight: 600;
+            margin-top: 2px;
+        }
+
+        .step-body {
+            flex: 1;
+        }
+
+        .step-body h4 {
+            font-size: 15px;
+            font-weight: 600;
+            margin-bottom: 6px;
+            color: var(--ink);
+        }
+
+        .step-body p,
+        .step-body ul {
+            font-size: 14px;
+        }
+
+        /* GRADING TABLE */
+        .grade-table thead th:last-child {
+            width: 50%;
+        }
+
+        /* SVG DIAGRAMS */
+        .diagram {
+            margin: 28px 0;
+            text-align: center;
+        }
+
+        .diagram svg {
+            max-width: 100%;
+            height: auto;
+        }
+
+        .diagram-caption {
+            font-size: 12px;
+            color: var(--ink-faint);
+            font-style: italic;
+            margin-top: 8px;
+            font-family: 'IBM Plex Sans', sans-serif;
+        }
+
+        /* FOOTER */
+        .doc-footer {
+            margin-top: 72px;
+            padding-top: 20px;
+            border-top: 1px solid var(--rule);
+            font-size: 13px;
+            color: var(--ink-soft);
+        }
+
+        /* PRINT */
+        @media print {
+            body {
+                padding: 40px;
+                font-size: 13px;
+            }
+
+            h2.part {
+                page-break-before: always;
+            }
+
+            pre {
+                font-size: 11px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- HEADER -->
+    <header class="doc-header">
+        <div class="doc-meta">Project 1 &nbsp;·&nbsp; Distributed Systems for Data Science &nbsp;·&nbsp;
+            New College of Florida</div>
+        <h1 class="doc-title">Building a Real-Time Ad Selection Pipeline</h1>
+        <div class="doc-sub">Deploy a Lambda-based bid engine that processes a live stream of ad auctions, persists
+            results to DynamoDB, and produces an analytical report.</div>
+    </header>
+
+
+    <!-- ══════════════════════════════════════════════════════════════════
+     PART 1 — BACKGROUND
+══════════════════════════════════════════════════════════════════ -->
+    <h2 class="part"><span class="part-num">Part 1</span> Background — How Online Ads Work</h2>
+
+    <h3 class="section">1.1 The Problem: Choosing the Right Ad in Milliseconds</h3>
+    <p>Every time you open an app or a website and see an advertisement, a small distributed computing event just
+        happened. In the time it took the page to load — usually under 100 milliseconds — the platform answered a
+        surprisingly hard question:</p>
+
+    <div class="callout">
+        <div class="callout-label">The Core Question</div>
+        <p>Given what we know about this user, this piece of content, and the advertisers currently competing for this
+            slot — which ad should we show right now?</p>
+    </div>
+
+    <p>There are thousands of advertisers who might want any given slot. Each has a different budget, a different target
+        audience, and different restrictions on where their ads can appear. The platform has to evaluate all of them,
+        rank them, and return a winner — before the user notices the page has loaded.</p>
+
+    <!-- RTB Flow Diagram -->
+    <div class="diagram">
+        <svg width="720" height="240" xmlns="http://www.w3.org/2000/svg" font-family="'IBM Plex Sans', sans-serif">
+            <rect width="720" height="240" fill="#fafafa" rx="8" />
+            <text x="360" y="24" text-anchor="middle" font-size="12" font-weight="bold" fill="#1a1a2e">From User Action
+                to Ad Delivery — under 100 ms</text>
+
+            <!-- Timeline bar -->
+            <rect x="40" y="200" width="640" height="3" fill="#d0d0e0" rx="2" />
+            <text x="40" y="220" font-size="10" fill="#8888aa">0 ms</text>
+            <text x="310" y="220" text-anchor="middle" font-size="10" fill="#8888aa">~50 ms</text>
+            <text x="660" y="220" text-anchor="middle" font-size="10" fill="#8888aa">~100 ms</text>
+
+            <!-- Boxes -->
+            <rect x="40" y="50" width="116" height="60" rx="7" fill="#e8eef9" stroke="#1a4fa0" stroke-width="1.5" />
+            <text x="98" y="75" text-anchor="middle" font-size="10" font-weight="bold" fill="#1a4fa0">User</text>
+            <text x="98" y="90" text-anchor="middle" font-size="9" fill="#4a4a6a">Opens app.</text>
+            <text x="98" y="103" text-anchor="middle" font-size="9" fill="#4a4a6a">Page loads.</text>
+
+            <line x1="158" y1="80" x2="194" y2="80" stroke="#8888aa" stroke-width="1.5" marker-end="url(#arr1)" />
+            <text x="176" y="73" text-anchor="middle" font-size="9" fill="#8888aa">signal</text>
+
+            <rect x="196" y="50" width="120" height="60" rx="7" fill="#eaf5ee" stroke="#1a6b3a" stroke-width="1.5" />
+            <text x="256" y="74" text-anchor="middle" font-size="10" font-weight="bold" fill="#1a6b3a">Publisher</text>
+            <text x="256" y="89" text-anchor="middle" font-size="9" fill="#4a4a6a">Sends ad slot</text>
+            <text x="256" y="102" text-anchor="middle" font-size="9" fill="#4a4a6a">opportunity</text>
+
+            <line x1="318" y1="80" x2="354" y2="80" stroke="#8888aa" stroke-width="1.5" marker-end="url(#arr1)" />
+            <text x="336" y="73" text-anchor="middle" font-size="9" fill="#8888aa">auction</text>
+
+            <rect x="356" y="38" width="142" height="82" rx="7" fill="#fdf6e3" stroke="#b07d20" stroke-width="2" />
+            <text x="427" y="60" text-anchor="middle" font-size="10" font-weight="bold" fill="#b07d20">Ad
+                Platform</text>
+            <text x="427" y="76" text-anchor="middle" font-size="9" fill="#4a4a6a">Scores bids.</text>
+            <text x="427" y="89" text-anchor="middle" font-size="9" fill="#4a4a6a">Selects winner.</text>
+            <text x="427" y="110" text-anchor="middle" font-size="9" fill="#b07d20" font-weight="bold">— YOUR LAMBDA
+                —</text>
+
+            <line x1="500" y1="80" x2="544" y2="80" stroke="#8888aa" stroke-width="1.5" marker-end="url(#arr1)" />
+            <text x="522" y="73" text-anchor="middle" font-size="9" fill="#8888aa">winner</text>
+
+            <rect x="546" y="50" width="124" height="60" rx="7" fill="#eaf5ee" stroke="#1a6b3a" stroke-width="1.5" />
+            <text x="608" y="74" text-anchor="middle" font-size="10" font-weight="bold" fill="#1a6b3a">Ad Shown</text>
+            <text x="608" y="89" text-anchor="middle" font-size="9" fill="#4a4a6a">Winning ad</text>
+            <text x="608" y="102" text-anchor="middle" font-size="9" fill="#4a4a6a">delivered</text>
+
+            <defs>
+                <marker id="arr1" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+                    <path d="M0,0 L0,6 L8,3 z" fill="#8888aa" />
+                </marker>
+            </defs>
+        </svg>
+        <div class="diagram-caption">The full real-time bidding flow — from user action to ad delivery</div>
+    </div>
+
+    <h3 class="section">1.2 Why the Highest Bid Does Not Always Win</h3>
+    <p>The obvious answer — take the highest bid — turns out to be bad business. A $4.20 fast food bid in the middle of
+        a sports article will generate poor engagement, hurting the advertiser's results and eroding their future bids.
+        A $3.50 sportswear bid in the same context is a far better fit for everyone.</p>
+    <p>Real ad platforms account for this by computing a <strong>score</strong> for each bid that reflects both the raw
+        amount and how well the advertiser's category matches the viewing context. The highest <em>score</em> wins, not
+        the highest raw bid. This is called quality-adjusted bidding, or eCPM ranking in the industry.</p>
+
+    <div class="callout gold">
+        <div class="callout-label">Scoring Formula</div>
+        <p><code>score = bid_amount &times; relevance_multiplier &times; time_bonus &times; device_bonus</code></p>
+    </div>
+
+    <h3 class="section">1.3 Why This Requires Distributed Computing</h3>
+    <p>A mid-sized ad platform handles millions of ad opportunities per hour, each requiring bid evaluation in under 100
+        milliseconds. No single machine can keep up. The standard solution is to queue incoming opportunities and
+        distribute them across many Lambda functions running in parallel. Each Lambda pulls a batch from an input queue,
+        applies the scoring logic, and posts a result to a results queue. A downstream consumer persists each result to
+        DynamoDB for analysis.</p>
+    <p>In this assignment, the live opportunity stream is generated by the test apparatus. Your job is to deploy the
+        Lambda in the middle, wire it to your queues, and write the analyst report at the end.</p>
+
+
+    <!-- ══════════════════════════════════════════════════════════════════
+     PART 2 — YOUR TASK
+══════════════════════════════════════════════════════════════════ -->
+    <h2 class="part"><span class="part-num">Part 2</span> Your Task</h2>
+
+    <p>You are a data scientist at AdFlow, a mid-sized ad platform. The infrastructure around you is already running:
+        your input queue receives a live stream of ad opportunities generated by the test apparatus, your results queue
+        collects processed results, and DynamoDB is ready to persist them. Your job is to deploy the Lambda in the
+        middle and write the analyst report at the end.</p>
+
+    <div class="responsibility">
+        <div class="resp-item provided">
+            <div class="resp-label">Provided by SAM Template</div>
+            SQS input queue, SQS results queue, DynamoDB results table, IAM execution role, CloudWatch log group
+        </div>
+        <div class="resp-item yours">
+            <div class="resp-label">You Write</div>
+            The Lambda bid engine — four functions in <code>lambda_handler.py</code>
+        </div>
+        <div class="resp-item yours">
+            <div class="resp-label">You Write</div>
+            The analyst report — four questions in <code>analysis/analysis.ipynb</code>
+        </div>
+    </div>
+
+    <!-- Pipeline Architecture Diagram -->
+    <div class="diagram">
+        <svg width="760" height="310" xmlns="http://www.w3.org/2000/svg" font-family="'IBM Plex Sans', sans-serif">
+            <rect width="760" height="310" fill="#fafafa" rx="8" />
+            <text x="380" y="22" text-anchor="middle" font-size="12" font-weight="bold" fill="#1a1a2e">The AdFlow
+                Pipeline — What SAM Creates vs. What You Write</text>
+
+            <!-- PROVIDED left region -->
+            <rect x="14" y="34" width="194" height="240" rx="6" fill="#eaf5ee" stroke="#1a6b3a" stroke-width="1.2"
+                stroke-dasharray="5,3" />
+            <text x="111" y="50" text-anchor="middle" font-size="10" fill="#1a6b3a" font-weight="bold"
+                letter-spacing="1">SAM CREATES</text>
+
+            <!-- YOU WRITE region center -->
+            <rect x="214" y="34" width="164" height="240" rx="6" fill="#fdf6e3" stroke="#b07d20" stroke-width="2" />
+            <text x="296" y="50" text-anchor="middle" font-size="10" fill="#b07d20" font-weight="bold"
+                letter-spacing="1">YOU WRITE</text>
+
+            <!-- PROVIDED right region -->
+            <rect x="384" y="34" width="362" height="240" rx="6" fill="#eaf5ee" stroke="#1a6b3a" stroke-width="1.2"
+                stroke-dasharray="5,3" />
+            <text x="565" y="50" text-anchor="middle" font-size="10" fill="#1a6b3a" font-weight="bold"
+                letter-spacing="1">SAM CREATES</text>
+
+            <!-- Test Apparatus box -->
+            <rect x="26" y="108" width="108" height="66" rx="7" fill="#e8eef9" stroke="#1a4fa0" stroke-width="1.5" />
+            <text x="80" y="133" text-anchor="middle" font-size="10" font-weight="bold" fill="#1a4fa0">Test
+                Apparatus</text>
+            <text x="80" y="149" text-anchor="middle" font-size="9" fill="#4a4a6a">Generates &amp; sends</text>
+            <text x="80" y="162" text-anchor="middle" font-size="9" fill="#4a4a6a">opportunities</text>
+
+            <!-- Arrow to Input Queue -->
+            <line x1="136" y1="141" x2="152" y2="141" stroke="#8888aa" stroke-width="1.5" marker-end="url(#arr2)" />
+
+            <!-- Input Queue pill -->
+            <rect x="154" y="108" width="24" height="66" rx="5" fill="#fdf6e3" stroke="#b07d20" stroke-width="1.2" />
+            <text x="166" y="148" text-anchor="middle" font-size="8" fill="#b07d20"
+                transform="rotate(-90,166,148)">INPUT QUEUE</text>
+
+            <!-- Arrow to Lambda -->
+            <line x1="180" y1="141" x2="220" y2="141" stroke="#8888aa" stroke-width="1.5" marker-end="url(#arr2)" />
+            <text x="200" y="134" text-anchor="middle" font-size="8" fill="#8888aa">batches</text>
+
+            <!-- Lambda box -->
+            <rect x="222" y="86" width="142" height="110" rx="7" fill="#fdf6e3" stroke="#b07d20" stroke-width="2" />
+            <text x="293" y="112" text-anchor="middle" font-size="10" font-weight="bold" fill="#b07d20">Your
+                Lambda</text>
+            <text x="293" y="130" text-anchor="middle" font-size="9" fill="#4a4a6a">compute_score()</text>
+            <text x="293" y="144" text-anchor="middle" font-size="9" fill="#4a4a6a">select_winner()</text>
+            <text x="293" y="158" text-anchor="middle" font-size="9" fill="#4a4a6a">process_opportunity()</text>
+            <text x="293" y="172" text-anchor="middle" font-size="9" fill="#4a4a6a">lambda_handler()</text>
+
+            <!-- Arrow to Results Queue -->
+            <line x1="366" y1="141" x2="396" y2="141" stroke="#8888aa" stroke-width="1.5" marker-end="url(#arr2)" />
+            <text x="381" y="134" text-anchor="middle" font-size="8" fill="#8888aa">result</text>
+
+            <!-- Results Queue -->
+            <rect x="398" y="108" width="82" height="66" rx="7" fill="#eaf5ee" stroke="#1a6b3a" stroke-width="1.5" />
+            <text x="439" y="133" text-anchor="middle" font-size="10" font-weight="bold" fill="#1a6b3a">Results</text>
+            <text x="439" y="148" text-anchor="middle" font-size="9" fill="#4a4a6a">Queue</text>
+            <text x="439" y="163" text-anchor="middle" font-size="8" fill="#4a4a6a">SQS</text>
+
+            <!-- Arrow down to DynamoDB -->
+            <line x1="439" y1="176" x2="439" y2="218" stroke="#8888aa" stroke-width="1.5" marker-end="url(#arr2)" />
+
+            <!-- DynamoDB -->
+            <rect x="398" y="220" width="82" height="44" rx="7" fill="#f3eeff" stroke="#553c9a" stroke-width="1.5" />
+            <text x="439" y="240" text-anchor="middle" font-size="10" font-weight="bold" fill="#553c9a">DynamoDB</text>
+            <text x="439" y="255" text-anchor="middle" font-size="9" fill="#4a4a6a">Results table</text>
+
+            <!-- Arrow right from DynamoDB to Report -->
+            <line x1="482" y1="242" x2="536" y2="242" stroke="#8888aa" stroke-width="1.5" marker-end="url(#arr2)" />
+
+            <!-- Analysis / Report box -->
+            <rect x="538" y="220" width="140" height="44" rx="7" fill="#fef2f2" stroke="#9b1c1c" stroke-width="1.5" />
+            <text x="608" y="240" text-anchor="middle" font-size="10" font-weight="bold"
+                fill="#9b1c1c">analysis.ipynb</text>
+            <text x="608" y="255" text-anchor="middle" font-size="9" fill="#4a4a6a">Your analyst report</text>
+
+            <!-- Test apparatus also reads results queue (poll arrows) -->
+            <line x1="439" y1="108" x2="439" y2="80" stroke="#8888aa" stroke-width="1" stroke-dasharray="4,2" />
+            <line x1="80" y1="80" x2="439" y2="80" stroke="#8888aa" stroke-width="1" stroke-dasharray="4,2" />
+            <line x1="80" y1="80" x2="80" y2="108" stroke="#8888aa" stroke-width="1" stroke-dasharray="4,2"
+                marker-end="url(#arr2)" />
+            <text x="260" y="73" text-anchor="middle" font-size="8" fill="#8888aa">apparatus polls results (live
+                metrics)</text>
+
+            <defs>
+                <marker id="arr2" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+                    <path d="M0,0 L0,6 L8,3 z" fill="#8888aa" />
+                </marker>
+            </defs>
+        </svg>
+        <div class="diagram-caption">Green dashed = created by SAM on deploy. Orange solid = your code. The test
+            apparatus drives input and monitors output.</div>
+    </div>
+
+    <h3 class="section">2.1 The Opportunity Message Format</h3>
+    <p>Each SQS message your Lambda receives contains a JSON-encoded ad opportunity. Parse it with
+        <code>json.loads(record["body"])</code>:
+    </p>
+
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Field</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>opportunity_id</td>
+                    <td>string</td>
+                    <td>Unique identifier for this ad slot (UUID)</td>
+                </tr>
+                <tr>
+                    <td>timestamp</td>
+                    <td>ISO 8601 string</td>
+                    <td>When the opportunity occurred — used to compute time bonus</td>
+                </tr>
+                <tr>
+                    <td>user_id</td>
+                    <td>string</td>
+                    <td>Anonymized user identifier</td>
+                </tr>
+                <tr>
+                    <td>content_category</td>
+                    <td>string</td>
+                    <td><code>sports</code>, <code>news</code>, <code>entertainment</code>, <code>finance</code>,
+                        <code>lifestyle</code>
+                    </td>
+                </tr>
+                <tr>
+                    <td>device_type</td>
+                    <td>string</td>
+                    <td><code>mobile</code> or <code>desktop</code></td>
+                </tr>
+                <tr>
+                    <td>region</td>
+                    <td>string</td>
+                    <td><code>northeast</code>, <code>southeast</code>, <code>midwest</code>, <code>west</code>,
+                        <code>international</code>
+                    </td>
+                </tr>
+                <tr>
+                    <td>bids</td>
+                    <td>list of objects</td>
+                    <td>Each bid: <code>advertiser_id</code>, <code>bid_amount</code> (USD CPM), <code>category</code>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <p>Each opportunity carries between 3 and 8 competing bids, with amounts ranging from $1.00 to $8.00 CPM.</p>
+
+    <h3 class="section">2.2 The Result Message Format</h3>
+    <p>For each opportunity processed, your Lambda posts one result message to the results queue and writes the same
+        record to DynamoDB. The result must contain exactly these fields:</p>
+
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Field</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>opportunity_id</td>
+                    <td>string</td>
+                    <td>Copied from the input message</td>
+                </tr>
+                <tr>
+                    <td>winning_advertiser_id</td>
+                    <td>string</td>
+                    <td>The advertiser whose bid won</td>
+                </tr>
+                <tr>
+                    <td>winning_bid_amount</td>
+                    <td>float</td>
+                    <td>The raw bid amount of the winner (USD CPM)</td>
+                </tr>
+                <tr>
+                    <td>winning_score</td>
+                    <td>float</td>
+                    <td>The computed score that won the auction</td>
+                </tr>
+                <tr>
+                    <td>score_margin</td>
+                    <td>float</td>
+                    <td>Winning score minus second-place score</td>
+                </tr>
+                <tr>
+                    <td>processed_at</td>
+                    <td>ISO 8601 string</td>
+                    <td>UTC timestamp of when your Lambda processed this — used to measure latency</td>
+                </tr>
+                <tr>
+                    <td>content_category</td>
+                    <td>string</td>
+                    <td>Copied from the input message — needed for category-level analysis in Part 5</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <h3 class="section">2.3 The Scoring Function</h3>
+
+    <div class="callout gold">
+        <div class="callout-label">Formula</div>
+        <p><code>score = bid_amount &times; relevance_multiplier &times; time_bonus &times; device_bonus</code></p>
+    </div>
+
+    <h4 class="subsection">Relevance Multiplier</h4>
+    <p>Rewards bids whose advertiser category matches the content being viewed. Any combination not listed receives 1.0.
+    </p>
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Content Category</th>
+                    <th>Advertiser Category</th>
+                    <th>Multiplier</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>sports</td>
+                    <td>sportswear</td>
+                    <td>1.4</td>
+                </tr>
+                <tr>
+                    <td>sports</td>
+                    <td>energy_drink</td>
+                    <td>1.3</td>
+                </tr>
+                <tr>
+                    <td>finance</td>
+                    <td>fintech</td>
+                    <td>1.5</td>
+                </tr>
+                <tr>
+                    <td>finance</td>
+                    <td>insurance</td>
+                    <td>1.3</td>
+                </tr>
+                <tr>
+                    <td>entertainment</td>
+                    <td>streaming</td>
+                    <td>1.4</td>
+                </tr>
+                <tr>
+                    <td>entertainment</td>
+                    <td>gaming</td>
+                    <td>1.3</td>
+                </tr>
+                <tr>
+                    <td>lifestyle</td>
+                    <td>beauty</td>
+                    <td>1.3</td>
+                </tr>
+                <tr>
+                    <td>lifestyle</td>
+                    <td>travel</td>
+                    <td>1.2</td>
+                </tr>
+                <tr>
+                    <td>any</td>
+                    <td>any other combination</td>
+                    <td>1.0</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <h4 class="subsection">Time Bonus</h4>
+    <p>Applied based on the UTC hour of the opportunity's timestamp.</p>
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Hour Range (UTC)</th>
+                    <th>Bonus</th>
+                    <th>Rationale</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>06:00 – 08:59</td>
+                    <td>1.20</td>
+                    <td>Morning commute — high mobile engagement</td>
+                </tr>
+                <tr>
+                    <td>12:00 – 13:59</td>
+                    <td>1.15</td>
+                    <td>Lunch browsing</td>
+                </tr>
+                <tr>
+                    <td>19:00 – 22:59</td>
+                    <td>1.25</td>
+                    <td>Evening peak — highest engagement across platforms</td>
+                </tr>
+                <tr>
+                    <td>All other hours</td>
+                    <td>1.00</td>
+                    <td>No adjustment</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <h4 class="subsection">Device Bonus</h4>
+    <p>Apply <strong>1.1</strong> for <code>mobile</code>, <strong>1.0</strong> for <code>desktop</code>.</p>
+
+    <h4 class="subsection">Worked Example</h4>
+    <p>Opportunity: <code>content_category=sports</code>, <code>device_type=mobile</code>, timestamp hour = 20:00 UTC.
+        Two competing bids:</p>
+    <pre>Bid A: advertiser_id=adv_001, bid_amount=3.50, category=sportswear
+Bid B: advertiser_id=adv_002, bid_amount=4.20, category=fast_food
+
+Score A = 3.50 × 1.4 (sports/sportswear) × 1.25 (evening) × 1.1 (mobile) = 6.7375
+Score B = 4.20 × 1.0 (no match)          × 1.25 (evening) × 1.1 (mobile) = 5.7750
+
+Winner: adv_001 — despite submitting the lower raw bid
+score_margin = 6.7375 - 5.7750 = 0.9625</pre>
+
+
+
+    <!-- ══════════════════════════════════════════════════════════════════
+     PART 3 — SETUP AND DEPLOYMENT
+══════════════════════════════════════════════════════════════════ -->
+    <h2 class="part"><span class="part-num">Part 3</span> Setup and Deployment</h2>
+
+    <p>Getting your pipeline running requires configuring real AWS infrastructure, deploying your Lambda, and verifying
+        the pieces communicate before analysis is possible. Work through these steps in order — each is a prerequisite
+        for the next.</p>
+
+    <div class="diagram">
+        <svg width="720" height="140" xmlns="http://www.w3.org/2000/svg" font-family="'IBM Plex Sans', sans-serif">
+            <rect width="720" height="140" fill="#fafafa" rx="8" />
+            <text x="360" y="20" text-anchor="middle" font-size="11" font-weight="bold" fill="#1a1a2e">Setup and Deployment Overview</text>
+
+            <!-- Phase 1: Credentials -->
+            <rect x="10" y="40" width="120" height="60" rx="6" fill="#fdf6e3" stroke="#b07d20" stroke-width="1.5" />
+            <text x="70" y="62" text-anchor="middle" font-size="9" font-weight="bold" fill="#b07d20">3.1 Credentials</text>
+            <text x="70" y="76" text-anchor="middle" font-size="8" fill="#4a4a6a">aws sts</text>
+            <text x="70" y="88" text-anchor="middle" font-size="8" fill="#4a4a6a">get-caller-identity</text>
+
+            <line x1="132" y1="70" x2="148" y2="70" stroke="#8888aa" stroke-width="1.5" marker-end="url(#arrsetup)" />
+
+            <!-- Phase 2: Venv -->
+            <rect x="150" y="40" width="120" height="60" rx="6" fill="#e8eef9" stroke="#1a4fa0" stroke-width="1.5" />
+            <text x="210" y="62" text-anchor="middle" font-size="9" font-weight="bold" fill="#1a4fa0">3.4 Venv + Deps</text>
+            <text x="210" y="76" text-anchor="middle" font-size="8" fill="#4a4a6a">python -m venv</text>
+            <text x="210" y="88" text-anchor="middle" font-size="8" fill="#4a4a6a">pip install</text>
+
+            <line x1="272" y1="70" x2="288" y2="70" stroke="#8888aa" stroke-width="1.5" marker-end="url(#arrsetup)" />
+
+            <!-- Phase 3: Local Tests -->
+            <rect x="290" y="40" width="120" height="60" rx="6" fill="#eaf5ee" stroke="#1a6b3a" stroke-width="1.5" />
+            <text x="350" y="62" text-anchor="middle" font-size="9" font-weight="bold" fill="#1a6b3a">3.4 Local Tests</text>
+            <text x="350" y="76" text-anchor="middle" font-size="8" fill="#4a4a6a">pytest (expect</text>
+            <text x="350" y="88" text-anchor="middle" font-size="8" fill="#4a4a6a">8 failures)</text>
+
+            <line x1="412" y1="70" x2="428" y2="70" stroke="#8888aa" stroke-width="1.5" marker-end="url(#arrsetup)" />
+
+            <!-- Phase 4: Deploy -->
+            <rect x="430" y="40" width="120" height="60" rx="6" fill="#e8eef9" stroke="#1a4fa0" stroke-width="1.5" />
+            <text x="490" y="62" text-anchor="middle" font-size="9" font-weight="bold" fill="#1a4fa0">3.5 Deploy</text>
+            <text x="490" y="76" text-anchor="middle" font-size="8" fill="#4a4a6a">sam build</text>
+            <text x="490" y="88" text-anchor="middle" font-size="8" fill="#4a4a6a">sam deploy --guided</text>
+
+            <line x1="552" y1="70" x2="568" y2="70" stroke="#8888aa" stroke-width="1.5" marker-end="url(#arrsetup)" />
+
+            <!-- Phase 5: Test Apparatus -->
+            <rect x="570" y="40" width="140" height="60" rx="6" fill="#eaf5ee" stroke="#1a6b3a" stroke-width="1.5" />
+            <text x="640" y="62" text-anchor="middle" font-size="9" font-weight="bold" fill="#1a6b3a">3.6 Test Apparatus</text>
+            <text x="640" y="76" text-anchor="middle" font-size="8" fill="#4a4a6a">Verify pipeline</text>
+            <text x="640" y="88" text-anchor="middle" font-size="8" fill="#4a4a6a">end-to-end</text>
+
+            <text x="360" y="125" text-anchor="middle" font-size="9" fill="#8888aa">Complete these five phases before writing any code in Part 4.</text>
+
+            <defs>
+                <marker id="arrsetup" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+                    <path d="M0,0 L0,6 L8,3 z" fill="#8888aa" />
+                </marker>
+            </defs>
+        </svg>
+        <div class="diagram-caption">The five setup phases. Each must succeed before moving to the next.</div>
+    </div>
+
+    <h3 class="section">3.1 Pre-Flight Check (AWS Credentials)</h3>
+
+    <p>This project uses two sets of AWS credentials for different purposes. Keeping them separate protects your
+        account from accidental charges.</p>
+
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Credential</th>
+                    <th>Used For</th>
+                    <th>Who Sees It</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Admin credentials</strong></td>
+                    <td><code>sam build</code>, <code>sam deploy</code>, <code>sam delete</code></td>
+                    <td>You only &mdash; never share these</td>
+                </tr>
+                <tr>
+                    <td><strong>Project-scoped credentials</strong></td>
+                    <td>Test apparatus (browser), sharing with instructor for grading</td>
+                    <td>You + instructor</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <h4 class="subsection">Step A: Verify your admin credentials</h4>
+    <p>Your admin credentials are the ones tied to your AWS account. Export <code>AWS_ACCESS_KEY_ID</code> and
+        <code>AWS_SECRET_ACCESS_KEY</code> (and <code>AWS_SESSION_TOKEN</code> if using temporary credentials) in
+        your terminal, then confirm connectivity:</p>
+    <pre>aws sts get-caller-identity</pre>
+    <p>If you see an error, stop here and resolve your AWS account connectivity before proceeding. These credentials
+        are used only for <code>sam deploy</code> and should never be pasted into the browser test apparatus or
+        shared with anyone.</p>
+
+    <h4 class="subsection">Step B: Create a project-scoped IAM user</h4>
+    <p>Create a dedicated IAM user in your account that can <strong>only</strong> access your project's SQS queues and
+        DynamoDB table. This user cannot create EC2 instances, modify billing, or touch any other AWS service. These
+        are the credentials you will use in the test apparatus and share with the instructor for grading.</p>
+
+    <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-body">
+            <h4>Create the IAM user</h4>
+            <p>In the AWS Console, go to <strong>IAM</strong> &rarr; <strong>Users</strong> &rarr;
+                <strong>Create user</strong>. Name it <code>adflow-tester</code>. Do not enable console access &mdash;
+                this user only needs programmatic (API) access.</p>
+        </div>
+    </div>
+
+    <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-body">
+            <h4>Attach an inline policy</h4>
+            <p>On the <strong>Set permissions</strong> page, choose <strong>Attach policies directly</strong>, then
+                click <strong>Create policy</strong>. Switch to the <strong>JSON</strong> tab and paste the policy
+                below. Replace <code>YOUR-ACCOUNT-ID</code> with your 12-digit AWS account ID and
+                <code>YOURID</code> with the student ID you will use at deploy time (e.g. <code>gsalu</code>).</p>
+            <pre>{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "AdFlowSQS",
+            "Effect": "Allow",
+            "Action": [
+                "sqs:CreateQueue",
+                "sqs:DeleteQueue",
+                "sqs:TagQueue",
+                "sqs:SendMessage",
+                "sqs:ReceiveMessage",
+                "sqs:DeleteMessage",
+                "sqs:GetQueueAttributes",
+                "sqs:GetQueueUrl",
+                "sqs:PurgeQueue",
+                "sqs:ListQueues"
+            ],
+            "Resource": [
+                "arn:aws:sqs:us-east-1:YOUR-ACCOUNT-ID:adflow-YOURID-*"
+            ]
+        },
+        {
+            "Sid": "AdFlowSQSList",
+            "Effect": "Allow",
+            "Action": "sqs:ListQueues",
+            "Resource": "*"
+        },
+        {
+            "Sid": "AdFlowDynamoDB",
+            "Effect": "Allow",
+            "Action": [
+                "dynamodb:CreateTable",
+                "dynamodb:DeleteTable",
+                "dynamodb:TagResource",
+                "dynamodb:PutItem",
+                "dynamodb:GetItem",
+                "dynamodb:Scan",
+                "dynamodb:Query",
+                "dynamodb:DeleteItem",
+                "dynamodb:DescribeTable",
+                "dynamodb:ListTables"
+            ],
+            "Resource": [
+                "arn:aws:dynamodb:us-east-1:YOUR-ACCOUNT-ID:table/adflow-YOURID-*"
+            ]
+        },
+        {
+            "Sid": "AdFlowDynamoDBList",
+            "Effect": "Allow",
+            "Action": "dynamodb:ListTables",
+            "Resource": "*"
+        }
+    ]
+}</pre>
+            <p>Name the policy <code>adflow-project-policy</code> and create it. Back on the user creation page,
+                search for and attach this policy, then finish creating the user.</p>
+        </div>
+    </div>
+
+    <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-body">
+            <h4>Create an access key</h4>
+            <p>Open the <code>adflow-tester</code> user, go to the <strong>Security credentials</strong> tab, and
+                click <strong>Create access key</strong>. Choose <strong>Application running outside AWS</strong> as
+                the use case.</p>
+        </div>
+    </div>
+
+    <div class="callout green">
+        <div class="callout-label">Command-Line Alternative (Recommended)</div>
+        <p>If you prefer the command line, you can do all three steps with the AWS CLI. These commands work on
+            Windows, macOS, and Linux. First, open <code>iam-policy.json</code> in your project root and replace
+            <code>YOUR-ACCOUNT-ID</code> with your 12-digit AWS account ID and <code>YOURID</code> with your
+            student ID. Then run:</p>
+        <pre># 1. Create the user
+aws iam create-user --user-name adflow-tester
+
+# 2. Attach the scoped policy from the file
+aws iam put-user-policy --user-name adflow-tester --policy-name adflow-project-policy --policy-document file://iam-policy.json
+
+# 3. Create an access key (copy the output immediately!)
+aws iam create-access-key --user-name adflow-tester</pre>
+        <p>The last command prints both the <code>AccessKeyId</code> and <code>SecretAccessKey</code>. Copy them
+            into your <code>_secrets.env</code> file right away.</p>
+    </div>
+
+    <div class="callout red">
+        <div class="callout-label">Copy Your Secret Key Immediately</div>
+        <p>AWS shows the <code>Secret Access Key</code> <strong>exactly once</strong>. If you close the dialog or
+            navigate away without copying it, the secret is gone permanently and you must delete the key and create a
+            new one. Copy both the <code>Access Key ID</code> and the <code>Secret Access Key</code> the moment they
+            appear.</p>
+    </div>
+
+    <div class="callout gold">
+        <div class="callout-label">Save Your Project Credentials</div>
+        <p>Create a file named <code>_secrets.env</code> in your project root and store the
+            <strong>project-scoped</strong> credentials there:</p>
+        <pre># Project-scoped credentials (adflow-tester user)
+# Safe to share with instructor for grading
+AWS_ACCESS_KEY_ID=AKIA...
+AWS_SECRET_ACCESS_KEY=wJalr...</pre>
+        <p>This file must never be committed to Git. You will use these same credentials in the browser test
+            apparatus (Section 3.6) and share them with the instructor when submitting. Because this user can only
+            access your adflow SQS queues and DynamoDB table, sharing these keys does not expose your account to
+            billing risk.</p>
+    </div>
+
+    <h3 class="section">3.2 Project Structure</h3>
+    <pre>week4-adflow/
+  template.yaml              # SAM template — creates all AWS resources
+  iam-policy.json            # Scoped IAM policy for the tester user
+  worker/
+    lambda_handler.py        # Your implementation — four tasks to complete
+    requirements.txt         # Dependencies (boto3 is excluded; see note inside)
+    tests/
+      test_handler.py        # Three test suites — all must pass before deploying
+  analysis/
+    analysis.ipynb           # Your analyst report (Part 5)
+  cleanup.py                 # Purge queues + recreate DynamoDB table between runs
+  README.md</pre>
+
+    <h3 class="section">3.3 The SAM Template</h3>
+    <p>The <code>template.yaml</code> below creates everything your Lambda needs: the input queue, results queue,
+        DynamoDB results table, Lambda function, and SQS event source mapping. You pass your student ID at deploy time
+        and all resources are named <code>adflow-{StudentId}-{resource}</code>.</p>
+
+    <pre>AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  AdFlow Ad Selection Worker
+  Deploys the complete pipeline: SQS input queue, SQS results queue,
+  DynamoDB results table, and the Lambda worker with SQS trigger.
+
+Parameters:
+  StudentId:
+    Type: String
+    Description: >
+      Your student ID (e.g., gsalu). All resources will be named
+      adflow-{StudentId}-{resource}.
+    AllowedPattern: "[a-z0-9]+"
+    ConstraintDescription: Lowercase letters and numbers only.
+
+Resources:
+
+  # SQS Queues
+  InputQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub "adflow-${StudentId}-input"
+      VisibilityTimeout: 60
+      MessageRetentionPeriod: 86400   # 1 day
+
+  ResultsQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub "adflow-${StudentId}-results"
+      VisibilityTimeout: 30
+      MessageRetentionPeriod: 86400
+
+  # DynamoDB Table
+  ResultsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub "adflow-${StudentId}-results"
+      AttributeDefinitions:
+        - AttributeName: opportunity_id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: opportunity_id
+          KeyType: HASH
+      BillingMode: PAY_PER_REQUEST
+
+  # Lambda Worker
+  WorkerFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "adflow-${StudentId}-worker"
+      Handler: lambda_handler.lambda_handler
+      Runtime: python3.12
+      CodeUri: worker/
+      MemorySize: 256
+      Timeout: 30
+      Environment:
+        Variables:
+          RESULTS_QUEUE_URL: !Ref ResultsQueue
+          DYNAMO_TABLE_NAME: !Ref ResultsTable
+      Policies:
+        - SQSPollerPolicy:
+            QueueName: !GetAtt InputQueue.QueueName
+        - SQSSendMessagePolicy:
+            QueueName: !GetAtt ResultsQueue.QueueName
+        - DynamoDBCrudPolicy:
+            TableName: !Ref ResultsTable
+      Events:
+        SQSTrigger:
+          Type: SQS
+          Properties:
+            Queue: !GetAtt InputQueue.Arn
+            BatchSize: 10
+            MaximumBatchingWindowInSeconds: 0
+            FunctionResponseTypes:
+              - ReportBatchItemFailures
+
+Outputs:
+  InputQueueUrl:
+    Description: URL of your input queue (paste into test apparatus)
+    Value: !Ref InputQueue
+  InputQueueArn:
+    Description: ARN of your input queue
+    Value: !GetAtt InputQueue.Arn
+  ResultsQueueUrl:
+    Description: URL of your results queue
+    Value: !Ref ResultsQueue
+  TableName:
+    Description: Name of your DynamoDB results table
+    Value: !Ref ResultsTable
+  WorkerFunctionName:
+    Description: Name of your Lambda function
+    Value: !Ref WorkerFunction
+  WorkerLogGroup:
+    Description: CloudWatch log group for viewing Lambda logs
+    Value: !Sub "/aws/lambda/adflow-${StudentId}-worker"</pre>
+
+    <div class="callout red">
+        <div class="callout-label">WARNING: NO BOTO3</div>
+        <p><code>boto3</code> is already included in the Lambda Python 3.12 runtime. Do <strong>not</strong> add it to
+            <code>requirements.txt</code> — doing so bloats the deployment package by ~15 MB, dramatically increasing deployment times and adding 2–3 seconds to
+            every cold start. The provided <code>requirements.txt</code> is intentionally empty.
+        </p>
+    </div>
+
+    <h3 class="section">3.4 Verifying Your Local Test Environment</h3>
+    <p>The starter code includes three test suites that mock AWS services with <code>moto</code> — a library that
+        simulates SQS and DynamoDB locally so you can test without hitting real AWS.</p>
+
+    <h4 class="subsection">Setting Up a Virtual Environment</h4>
+    <p>Before installing dependencies, create and activate a Python virtual environment to keep your project packages
+        isolated. Choose the method that matches your setup:</p>
+
+    <div class="callout">
+        <div class="callout-label">Terminal (Command Line)</div>
+        <pre># Create the virtual environment (run once)
+python -m venv .venv
+
+# Activate it (run every time you open a new terminal)
+# Windows (PowerShell):
+.venv\Scripts\Activate.ps1
+
+# Windows (Command Prompt):
+.venv\Scripts\activate.bat
+
+# macOS / Linux:
+source .venv/bin/activate</pre>
+        <p>You will see <code>(.venv)</code> appear in your terminal prompt when the environment is active. All
+            <code>pip install</code> and <code>pytest</code> commands must be run with the environment active.</p>
+    </div>
+
+    <div class="callout">
+        <div class="callout-label">VS Code</div>
+        <p>Open the Command Palette (<code>Ctrl+Shift+P</code> on Windows, <code>Cmd+Shift+P</code> on macOS) and
+            select <strong>Python: Create Environment</strong>. Choose <strong>Venv</strong>, then pick your Python
+            3.12 interpreter. VS Code will create <code>.venv/</code> and automatically activate it in the integrated
+            terminal. If you already have a <code>.venv</code>, use <strong>Python: Select Interpreter</strong> and
+            point it to <code>.venv/Scripts/python.exe</code> (Windows) or <code>.venv/bin/python</code>
+            (macOS/Linux).</p>
+    </div>
+
+    <div class="callout">
+        <div class="callout-label">PyCharm</div>
+        <p>Go to <strong>Settings</strong> (or <strong>Preferences</strong> on macOS) and navigate to
+            <strong>Project: week4-adflow</strong> then <strong>Python Interpreter</strong>. Click the gear icon and
+            select <strong>Add Interpreter</strong> then <strong>Add Local Interpreter</strong>. Choose
+            <strong>Virtualenv Environment</strong>, set the location to your project’s <code>.venv</code> folder,
+            and click OK. PyCharm will activate it automatically for all run configurations and the built-in
+            terminal.</p>
+    </div>
+
+    <div class="callout red">
+        <div class="callout-label">Activate Before Every Session</div>
+        <p>Every time you open a new terminal window, you must re-activate the virtual environment before running
+            any <code>pip</code>, <code>pytest</code>, or <code>sam</code> commands. If you do not see
+            <code>(.venv)</code> in your prompt, your packages are not available and commands will fail.</p>
+    </div>
+
+    <h4 class="subsection">Installing Test Dependencies</h4>
+    <p>With your virtual environment active, install the test dependencies:</p>
+    <pre>pip install moto[sqs,dynamodb] pytest</pre>
+    <p>Then run the tests:</p>
+    <pre>pytest worker/tests/test_handler.py -v</pre>
+
+    <div class="callout gold">
+        <div class="callout-label">Expected: All Tests Fail Right Now</div>
+        <p>The starter code raises <code>NotImplementedError</code> for every function. All 8 tests will
+            fail at this point — that is expected and correct. The purpose of running <code>pytest</code> now is to
+            confirm that Python, moto, and pytest are installed and working. You will re-run these tests after
+            implementing each task in Part 4. All tests must pass before you deploy to AWS.</p>
+    </div>
+
+    <p>The three test suites verify:</p>
+    <ul>
+        <li><strong>Scoring accuracy</strong> — your formula produces exact values for known inputs, including edge cases (zero bid, missing category, malformed timestamp).</li>
+        <li><strong>Winner selection</strong> — the lower bidder wins when relevance outweighs raw bid amount; margin is computed correctly.</li>
+        <li><strong>End-to-end batch</strong> — a full Lambda invocation processes all records with results landing in both SQS and DynamoDB.</li>
+    </ul>
+
+    <h3 class="section">3.5 Deploying with SAM</h3>
+
+    <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-body">
+            <h4>Build the deployment package</h4>
+            <p>SAM resolves dependencies and packages your code. Run from the project root:</p>
+            <pre>sam build</pre>
+        </div>
+    </div>
+
+    <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-body">
+            <h4>Deploy with guided setup</h4>
+            <p>The first deploy uses <code>--guided</code> to walk through settings and save them to
+                <code>samconfig.toml</code>. Subsequent deploys just run <code>sam deploy</code>.
+            </p>
+            <pre>sam deploy --guided --stack-name adflow-YOURID</pre>
+            <p>SAM will ask several questions. Here is what each prompt means and what to enter:</p>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr><th>Prompt</th><th>What to Enter</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>Stack Name</td><td>Already set via <code>--stack-name</code>. Confirm or re-type <code>adflow-YOURID</code>.</td></tr>
+                        <tr><td>AWS Region</td><td><code>us-east-1</code> (or the region your instructor specified).</td></tr>
+                        <tr><td>Parameter StudentId</td><td>Your chosen ID — lowercase letters and numbers only (e.g. <code>gsalu</code>).</td></tr>
+                        <tr><td>Confirm changes before deploy</td><td><code>N</code> — speeds up iteration.</td></tr>
+                        <tr><td>Allow SAM CLI IAM role creation</td><td><code>Y</code> — SAM needs this to create the Lambda execution role.</td></tr>
+                        <tr><td>Disable rollback</td><td><code>N</code> — keep rollback enabled so failed deploys clean up.</td></tr>
+                        <tr><td>Save arguments to config file</td><td><code>Y</code> — saves your answers to <code>samconfig.toml</code> so future deploys are one command.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <p>After deployment completes, SAM prints your stack outputs. Copy everything — you will need the
+                <code>InputQueueUrl</code> and <code>ResultsQueueUrl</code> values. Verify they follow the naming
+                pattern <code>adflow-YOURID-input</code> and <code>adflow-YOURID-results</code>. Keep these URLs
+                accessible; you will reference them when configuring the test apparatus.
+            </p>
+        </div>
+    </div>
+
+    <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-body">
+            <h4>Verify the deployment</h4>
+            <p>Confirm all resources were created before writing any bid logic:</p>
+            <pre>aws lambda get-function --function-name adflow-YOURID-worker
+aws sqs get-queue-url --queue-name adflow-YOURID-input
+aws dynamodb describe-table --table-name adflow-YOURID-results</pre>
+        </div>
+    </div>
+
+    <div class="step">
+        <div class="step-num">4</div>
+        <div class="step-body">
+            <h4>Stream your Lambda logs</h4>
+            <p>Once the test apparatus sends messages, watch your Lambda process them in real time:</p>
+            <pre>aws logs tail /aws/lambda/adflow-YOURID-worker --follow</pre>
+            <p>Your Lambda logs batch timing at the end of every invocation. Look for lines like
+                <code>Batch complete: 10/10 succeeded in 142.3 ms</code>. If messages are arriving but nothing appears
+                in CloudWatch, the SQS trigger is likely misconfigured.
+            </p>
+        </div>
+    </div>
+
+    <div class="step">
+        <div class="step-num">5</div>
+        <div class="step-body">
+            <h4>Tear down when done</h4>
+            <pre>sam delete --stack-name adflow-YOURID</pre>
+            <p>This removes all resources created by the template. The DynamoDB table and its data are deleted. Export
+                your results before running this command if you still need them for analysis.</p>
+        </div>
+    </div>
+
+    <h3 class="section">3.6 The Test Apparatus</h3>
+
+    <!-- Test Apparatus Diagram -->
+    <div class="diagram">
+        <svg width="680" height="200" xmlns="http://www.w3.org/2000/svg" font-family="'IBM Plex Sans', sans-serif">
+            <rect width="680" height="200" fill="#fafafa" rx="8" />
+            <text x="340" y="22" text-anchor="middle" font-size="12" font-weight="bold" fill="#1a1a2e">Test Apparatus —
+                Browser-Only Architecture</text>
+
+            <!-- Browser box -->
+            <rect x="20" y="50" width="200" height="120" rx="7" fill="#e8eef9" stroke="#1a4fa0" stroke-width="1.5" />
+            <text x="120" y="75" text-anchor="middle" font-size="10" font-weight="bold" fill="#1a4fa0">Browser</text>
+            <text x="120" y="92" text-anchor="middle" font-size="9" fill="#4a4a6a">index.html</text>
+            <text x="120" y="107" text-anchor="middle" font-size="9" fill="#4a4a6a">Enter student ID</text>
+            <text x="120" y="121" text-anchor="middle" font-size="9" fill="#4a4a6a">Pick test profile</text>
+            <text x="120" y="135" text-anchor="middle" font-size="9" fill="#4a4a6a">View live metrics</text>
+            <text x="120" y="154" text-anchor="middle" font-size="8" fill="#8888aa">file://index.html</text>
+
+            <!-- Arrow browser -> AWS -->
+            <line x1="222" y1="110" x2="308" y2="110" stroke="#8888aa" stroke-width="1.5" marker-end="url(#arr3)" />
+            <text x="265" y="103" text-anchor="middle" font-size="8" fill="#8888aa">AWS SDK</text>
+
+            <!-- AWS box -->
+            <rect x="310" y="50" width="350" height="120" rx="7" fill="#eaf5ee" stroke="#1a6b3a" stroke-width="1.5" />
+            <text x="485" y="75" text-anchor="middle" font-size="10" font-weight="bold" fill="#1a6b3a">AWS (your
+                deployed stack)</text>
+            <text x="485" y="95" text-anchor="middle" font-size="9" fill="#4a4a6a">SQS input queue</text>
+            <text x="485" y="110" text-anchor="middle" font-size="9" fill="#4a4a6a">Lambda worker (your code)</text>
+            <text x="485" y="125" text-anchor="middle" font-size="9" fill="#4a4a6a">SQS results queue</text>
+            <text x="485" y="140" text-anchor="middle" font-size="9" fill="#4a4a6a">DynamoDB results table</text>
+
+            <defs>
+                <marker id="arr3" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+                    <path d="M0,0 L0,6 L8,3 z" fill="#8888aa" />
+                </marker>
+            </defs>
+        </svg>
+        <div class="diagram-caption">The test apparatus runs entirely in your browser. All AWS calls are made directly
+            from the browser using temporary credentials.</div>
+    </div>
+
+    <p>The test apparatus is a single HTML file — double-click <code>test-apparatus/index.html</code> and it opens in
+        your browser. No server or Python process needed. Enter your student ID and the same AWS credentials you saved
+        to <code>_secrets.env</code> in Section 3.1 (Access Key ID, Secret Access Key, and Session Token if applicable).
+        Choose a test profile and click <strong>Run Test</strong>. The tool generates opportunity messages, sends them
+        directly to your SQS input queue via the AWS JavaScript SDK, and polls your results queue as Lambda responds.
+        Queue names (<code>adflow-{id}-input</code>, <code>adflow-{id}-results</code>) are derived automatically from
+        your student ID.</p>
+
+    <div class="callout green">
+        <div class="callout-label">Credential Safety</div>
+        <p>The test apparatus stores your AWS credentials in your browser's <code>localStorage</code> for convenience
+            between sessions. These credentials never leave your computer except as direct HTTPS calls to the AWS API
+            endpoints. They are not sent to any third-party server. When you are finished with the project, use the
+            browser's developer tools to clear localStorage or simply revoke the credentials in AWS.</p>
+    </div>
+
+    <p>Test profiles control how messages are sent:</p>
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Profile</th>
+                    <th>Messages</th>
+                    <th>Delay</th>
+                    <th>Purpose</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Warmup</td>
+                    <td>10</td>
+                    <td>500 ms between batches</td>
+                    <td>Verify end-to-end wiring before committing to a full run</td>
+                </tr>
+                <tr>
+                    <td>Steady</td>
+                    <td>100</td>
+                    <td>100 ms</td>
+                    <td>Moderate load — good for iterating on your implementation</td>
+                </tr>
+                <tr>
+                    <td>Burst</td>
+                    <td>500</td>
+                    <td>0 ms</td>
+                    <td>Full-speed load — used for performance measurement</td>
+                </tr>
+                <tr>
+                    <td>Soak</td>
+                    <td>200</td>
+                    <td>1,000 ms</td>
+                    <td>Sustained low rate — tests queue behavior over time</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="callout gold">
+        <div class="callout-label">Cleanup between runs</div>
+        <p>Before a fresh test run, purge both queues and recreate the DynamoDB table to start with a clean slate. Use
+            the Cleanup buttons in the test apparatus UI, or run
+            <code>python cleanup.py --student-id YOURID</code> from the command line.
+        </p>
+    </div>
+
+    <div class="callout">
+        <div class="callout-label">Companion Documents</div>
+        <p>Complete instructions — credentials, test profiles, live metrics, troubleshooting — are in <a
+                href="test-apparatus-guide.html"><strong>test-apparatus-guide.html</strong></a>. All CLI commands, SAM
+            patterns, and boto3 snippets are in <a
+                href="command-reference.html"><strong>command-reference.html</strong></a>.</p>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════════════
+     PART 4 — THE BID ENGINE
+══════════════════════════════════════════════════════════════════ -->
+    <h2 class="part"><span class="part-num">Part 4</span> The Bid Engine</h2>
+
+    <p>Open <code>worker/lambda_handler.py</code>. The file contains scoring constants (<code>RELEVANCE_MAP</code>,
+        <code>TIME_WINDOWS</code>, <code>DEVICE_BONUS</code>), skeleton functions with docstrings, and the module-level
+        AWS client setup. Implement the four functions below in order — each one is called by the next.
+    </p>
+
+    <div class="task">
+        <div class="task-header">
+            <span class="task-num">Task 1</span>
+            <span class="task-name">compute_score(bid, opportunity)</span>
+        </div>
+        <div class="task-body">
+            <p>Implement the scoring formula from Section 2.3. The function receives one bid dict and the full
+                opportunity dict and returns a float score. The scoring constants are already defined at the top of the
+                module — use them.</p>
+            <p>Handle edge cases cleanly: what is the correct behavior if <code>bid_amount</code> is missing or zero?
+                What if the category pair is not in <code>RELEVANCE_MAP</code>? What if the timestamp cannot be parsed?
+                The test suite exercises all three of these.</p>
+        </div>
+    </div>
+
+    <div class="task">
+        <div class="task-header">
+            <span class="task-num">Task 2</span>
+            <span class="task-name">select_winner(opportunity)</span>
+        </div>
+        <div class="task-body">
+            <p>Evaluate all bids for a single opportunity and return the winner. Call <code>compute_score()</code> for
+                each bid, find the highest score, and return a dict with four fields:
+                <code>winning_advertiser_id</code>, <code>winning_bid_amount</code>, <code>winning_score</code>, and
+                <code>score_margin</code> (winning score minus second-place score). Return <code>None</code> if the bids
+                list is empty or all bids score zero.
+            </p>
+        </div>
+    </div>
+
+    <div class="task">
+        <div class="task-header">
+            <span class="task-num">Task 3</span>
+            <span class="task-name">process_opportunity(opportunity)</span>
+        </div>
+        <div class="task-body">
+            <p>Process one opportunity end to end:</p>
+            <ol>
+                <li>Call <code>select_winner()</code> to get the winning bid.</li>
+                <li>Build the result record (all fields from Section 2.2), setting <code>processed_at</code> to the
+                    current UTC time formatted as an ISO 8601 string.</li>
+                <li>Post the result to <code>RESULTS_QUEUE_URL</code> with <code>sqs.send_message()</code>. The message
+                    body must be a JSON string — use <code>json.dumps()</code> on your result dict.</li>
+                <li>Write the record to DynamoDB with <code>table.put_item()</code>.</li>
+            </ol>
+            <p>The SQS post comes first — it is on the latency-measured path. DynamoDB is persistence and can tolerate
+                slightly more time.</p>
+
+            <div class="callout red" style="margin-top:14px;">
+                <div class="callout-label">Two Formats for the Same Record</div>
+                <p>SQS and DynamoDB expect different data types. For the SQS message, use standard Python
+                    <code>float</code> values and serialize with <code>json.dumps()</code>. For the DynamoDB write,
+                    DynamoDB does not accept Python <code>float</code> — you must wrap every numeric value in
+                    <code>Decimal(str(value))</code> before calling <code>put_item()</code>. Build the DynamoDB item
+                    separately or convert after the SQS post.
+                </p>
+            </div>
+
+            <div class="callout gold" style="margin-top:14px;">
+                <div class="callout-label">Latency Note</div>
+                <p>The <code>processed_at</code> timestamp is stamped at the moment your Lambda posts to the results
+                    queue, not when the opportunity was generated. The difference between the opportunity's
+                    <code>timestamp</code> field and your <code>processed_at</code> measures end-to-end pipeline
+                    latency. The test apparatus displays this live.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <div class="task">
+        <div class="task-header">
+            <span class="task-num">Task 4</span>
+            <span class="task-name">lambda_handler(event, context)</span>
+        </div>
+        <div class="task-body">
+            <p>This is the Lambda entry point. <code>event["Records"]</code> is a list of SQS message records. For each
+                record: parse the JSON body with <code>json.loads(record["body"])</code>, call
+                <code>process_opportunity()</code>, and catch any exceptions so a single malformed message does not
+                abort the entire batch.</p>
+
+            <h4 class="subsection">Finding the Message ID</h4>
+            <p>Each SQS record includes a unique identifier at <code>record["messageId"]</code>. This is the value you
+                need to report in <code>batchItemFailures</code> if processing fails. It also serves as a
+                correlation ID — you can log it alongside your processing output to trace a specific message through
+                CloudWatch logs, the results queue, and DynamoDB.</p>
+
+            <div class="callout gold" style="margin-top:14px;">
+                <div class="callout-label">Defensive Programming</div>
+                <p>Not every message in a queue is perfectly formed. Wrap your parsing logic in a
+                    <code>try/except</code> block and catch <code>json.JSONDecodeError</code> and general
+                    <code>Exception</code> separately. If parsing or processing fails, log the error with the message
+                    ID but allow the function to continue processing the rest of the batch.</p>
+            </div>
+
+            <p>Track failed message IDs and return them in
+                the <code>batchItemFailures</code> format so SQS retries only those messages:</p>
+            <pre>return {
+    "batchItemFailures": [
+        {"itemIdentifier": record["messageId"]},
+        ...
+    ]
+}</pre>
+            <p>If you return an empty list, SQS considers every message in the batch successfully processed and deletes
+                them from the queue. The key name <code>batchItemFailures</code> and the nested key
+                <code>itemIdentifier</code> must be spelled exactly — SQS will silently retry the entire batch if the
+                format is wrong.
+            </p>
+            <p>Log wall-clock timing for the full batch using <code>time.perf_counter()</code> and
+                <code>logger.info()</code>. The module docstring shows the expected log format.
+            </p>
+        </div>
+    </div>
+
+    <div class="callout green">
+        <div class="callout-label">Naming Convention</div>
+        <p>All AWS resources created by SAM follow the pattern <code>adflow-{StudentId}-{resource}</code>. Your stack
+            name, function name, queue names, and table name all share this prefix. Keep your student ID consistent
+            across every command you run.</p>
+    </div>
+
+    <div class="table-wrap" style="margin-top:28px;">
+        <table>
+            <thead>
+                <tr>
+                    <th>Resource</th>
+                    <th>Name Pattern</th>
+                    <th>Example</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>SQS Input Queue</td>
+                    <td>adflow-{id}-input</td>
+                    <td>adflow-gsalu-input</td>
+                </tr>
+                <tr>
+                    <td>SQS Results Queue</td>
+                    <td>adflow-{id}-results</td>
+                    <td>adflow-gsalu-results</td>
+                </tr>
+                <tr>
+                    <td>DynamoDB Table</td>
+                    <td>adflow-{id}-results</td>
+                    <td>adflow-gsalu-results</td>
+                </tr>
+                <tr>
+                    <td>Lambda Function</td>
+                    <td>adflow-{id}-worker</td>
+                    <td>adflow-gsalu-worker</td>
+                </tr>
+                <tr>
+                    <td>CloudWatch Log Group</td>
+                    <td>/aws/lambda/adflow-{id}-worker</td>
+                    <td>/aws/lambda/adflow-gsalu-worker</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+
+    <!-- ==================================================================
+     DEVELOPMENT CYCLE
+================================================================== -->
+    <h2 class="part"><span class="part-num">Part 4 cont.</span> The Development Cycle</h2>
+
+    <p>After implementing the four tasks in Part 4, follow this cycle to iterate on your code. Each loop takes only a
+        few minutes once you are familiar with the commands.</p>
+
+    <div class="diagram">
+        <svg width="720" height="260" xmlns="http://www.w3.org/2000/svg" font-family="'IBM Plex Sans', sans-serif">
+            <rect width="720" height="260" fill="#fafafa" rx="8" />
+            <text x="360" y="22" text-anchor="middle" font-size="12" font-weight="bold" fill="#1a1a2e">Development
+                Cycle — Repeat Until All Tests Pass and Burst Run Succeeds</text>
+
+            <!-- Step 1: Edit Code -->
+            <rect x="30" y="60" width="130" height="70" rx="7" fill="#fdf6e3" stroke="#b07d20" stroke-width="2" />
+            <text x="95" y="88" text-anchor="middle" font-size="10" font-weight="bold" fill="#b07d20">1. Edit Code</text>
+            <text x="95" y="104" text-anchor="middle" font-size="9" fill="#4a4a6a">lambda_handler.py</text>
+            <text x="95" y="118" text-anchor="middle" font-size="9" fill="#4a4a6a">Tasks 1–4</text>
+
+            <!-- Arrow 1 to 2 -->
+            <line x1="162" y1="95" x2="192" y2="95" stroke="#8888aa" stroke-width="1.5" marker-end="url(#arrcyc)" />
+
+            <!-- Step 2: Run pytest -->
+            <rect x="194" y="60" width="130" height="70" rx="7" fill="#eaf5ee" stroke="#1a6b3a" stroke-width="1.5" />
+            <text x="259" y="88" text-anchor="middle" font-size="10" font-weight="bold" fill="#1a6b3a">2. Run pytest</text>
+            <text x="259" y="104" text-anchor="middle" font-size="9" fill="#4a4a6a">All 8 tests must</text>
+            <text x="259" y="118" text-anchor="middle" font-size="9" fill="#4a4a6a">pass locally</text>
+
+            <!-- Arrow 2 to 3 -->
+            <line x1="326" y1="95" x2="356" y2="95" stroke="#8888aa" stroke-width="1.5" marker-end="url(#arrcyc)" />
+
+            <!-- Step 3: Build and Deploy -->
+            <rect x="358" y="60" width="130" height="70" rx="7" fill="#e8eef9" stroke="#1a4fa0" stroke-width="1.5" />
+            <text x="423" y="84" text-anchor="middle" font-size="10" font-weight="bold" fill="#1a4fa0">3. Deploy</text>
+            <text x="423" y="100" text-anchor="middle" font-size="9" fill="#4a4a6a">sam build</text>
+            <text x="423" y="114" text-anchor="middle" font-size="9" fill="#4a4a6a">sam deploy</text>
+
+            <!-- Arrow 3 to 4 -->
+            <line x1="490" y1="95" x2="520" y2="95" stroke="#8888aa" stroke-width="1.5" marker-end="url(#arrcyc)" />
+
+            <!-- Step 4: Test Apparatus -->
+            <rect x="522" y="60" width="168" height="70" rx="7" fill="#eaf5ee" stroke="#1a6b3a" stroke-width="1.5" />
+            <text x="606" y="84" text-anchor="middle" font-size="10" font-weight="bold" fill="#1a6b3a">4. Test Apparatus</text>
+            <text x="606" y="100" text-anchor="middle" font-size="9" fill="#4a4a6a">Warmup (10 msgs)</text>
+            <text x="606" y="114" text-anchor="middle" font-size="9" fill="#4a4a6a">then Burst (500)</text>
+
+            <!-- Return arrow (bottom) -->
+            <line x1="606" y1="132" x2="606" y2="190" stroke="#8888aa" stroke-width="1" stroke-dasharray="4,2" />
+            <line x1="606" y1="190" x2="95" y2="190" stroke="#8888aa" stroke-width="1" stroke-dasharray="4,2" />
+            <line x1="95" y1="190" x2="95" y2="132" stroke="#8888aa" stroke-width="1" stroke-dasharray="4,2"
+                marker-end="url(#arrcyc)" />
+            <text x="350" y="210" text-anchor="middle" font-size="9" fill="#8888aa">If something is wrong, edit
+                and repeat</text>
+
+            <!-- Success label -->
+            <text x="606" y="245" text-anchor="middle" font-size="10" font-weight="bold" fill="#1a6b3a">All results arriving? Move to Part 5.</text>
+
+            <defs>
+                <marker id="arrcyc" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+                    <path d="M0,0 L0,6 L8,3 z" fill="#8888aa" />
+                </marker>
+            </defs>
+        </svg>
+        <div class="diagram-caption">The typical development loop. Most students iterate 2–3 times before all tests
+            pass and the Burst run succeeds end-to-end.</div>
+    </div>
+
+
+    <!-- ══════════════════════════════════════════════════════════════════
+     PART 4.5 — MEASURING PERFORMANCE
+══════════════════════════════════════════════════════════════════ -->
+    <h2 class="part"><span class="part-num">Part 4.5</span> Measuring Performance</h2>
+
+    <p>Once your Lambda is deployed and the test apparatus shows results arriving, the natural question is: <em>how fast
+            is it?</em> This section explains what "latency" means in this system and how to measure it at three levels
+        of
+        detail — from a live browser chart down to per-line Lambda timing in CloudWatch.</p>
+
+    <h3 class="section">What Latency Means Here</h3>
+    <p>The test apparatus measures <strong>end-to-end latency</strong> as the time from when a message is accepted by
+        the SQS input queue to when the <code>processed_at</code> timestamp appears in the result. That span includes
+        four distinct segments:</p>
+
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Segment</th>
+                    <th>What happens</th>
+                    <th>Typical cost</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>A — SQS ingest</td>
+                    <td>Browser sends message to SQS; SQS acknowledges</td>
+                    <td>40–100 ms</td>
+                </tr>
+                <tr>
+                    <td>B — SQS → Lambda trigger</td>
+                    <td>SQS event source mapping polls and invokes Lambda</td>
+                    <td>50–500 ms (warm), +200–800 ms cold start</td>
+                </tr>
+                <tr>
+                    <td>C — Lambda compute</td>
+                    <td>Score all bids, select winner, post result to SQS</td>
+                    <td>10–50 ms</td>
+                </tr>
+                <tr>
+                    <td>D — DynamoDB write</td>
+                    <td>Persist record (runs in background thread in reference impl)</td>
+                    <td>30–80 ms (off hot path)</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="callout gold">
+        <div class="callout-label">Target</div>
+        <p>A well-implemented Lambda on a warm container should achieve average end-to-end latency under 500 ms.
+            Cold starts (first invocation after idle) will be higher — this is normal and expected.</p>
+    </div>
+
+    <h3 class="section">Method 1 — Test Apparatus Performance Panel</h3>
+    <p>The test apparatus live view includes a <strong>Performance Stats</strong> panel that updates in real time as
+        results arrive. It shows:</p>
+    <ul>
+        <li><strong>Min / Avg / p95 / Max</strong> — latency statistics across all results received so far.</li>
+        <li><strong>Latency distribution bar</strong> — the share of results that landed under 500 ms (green), between
+            500 ms and 1 s (amber), or over 1 s (red).</li>
+        <li><strong>Sparkline</strong> — the last 60 per-message latencies plotted over time. The dashed line marks the
+            500 ms target. A horizontal sparkline near the bottom is a sign of a consistently fast Lambda.</li>
+    </ul>
+    <p>Run the <strong>Warmup</strong> profile first (10 messages, 500 ms delay) to confirm your Lambda is connected,
+        then the <strong>Burst</strong> profile (500 messages) to get statistically meaningful numbers. The first result
+        in any run may be slow due to a cold start — this is captured in the Max metric but should not distort your Avg
+        significantly once 50+ results are in.</p>
+
+    <h3 class="section">Method 2 — CloudWatch Logs (Lambda Internal Timing)</h3>
+    <p>Your Lambda logs processing time for every message and every batch. These logs give you visibility into what
+        is happening <em>inside</em> the Lambda container, independent of network round-trip time.</p>
+
+    <h4 class="subsection">Follow logs live (terminal)</h4>
+    <pre>aws logs tail /aws/lambda/adflow-YOURID-worker --follow --region us-east-1</pre>
+
+    <h4 class="subsection">Filter to only batch-complete summary lines</h4>
+    <pre>aws logs filter-log-events \
+    --log-group-name /aws/lambda/adflow-YOURID-worker \
+    --filter-pattern "Batch complete" \
+    --region us-east-1</pre>
+
+    <h4 class="subsection">What to look for</h4>
+    <ul>
+        <li><strong><code>Processed &lt;id&gt; in X ms</code></strong> — wall-clock time for one opportunity, measured
+            from function entry to the SQS result post. This is segment C only.</li>
+        <li><strong><code>REPORT Duration: X ms</code></strong> — total billed Lambda execution time per invocation.
+            This covers segments C + D (if DynamoDB is synchronous in your implementation).</li>
+        <li><strong><code>Init Duration: X ms</code></strong> — only appears on cold starts. This is how long Lambda
+            took to initialize your container and import your code.</li>
+    </ul>
+
+    <div class="callout">
+        <div class="callout-label">Tip</div>
+        <p>If your REPORT Duration is much higher than your per-message log times, the difference is almost always
+            the DynamoDB write. Consider whether that write needs to be on the critical path — the result is already
+            in the queue at that point.</p>
+    </div>
+
+    <h3 class="section">Method 3 — Timing Probe Script</h3>
+    <p>For a precise breakdown of each latency segment, use the included <code>timing_probe.py</code> script. It sends
+        a single well-formed opportunity through your pipeline, measures each hop, fetches CloudWatch logs, and prints a
+        full summary. Run it from the project root with your virtual environment active:</p>
+    <pre>python timing_probe.py --student-id YOURID --runs 5 --region us-east-1</pre>
+    <p>The output labels each segment (A through E) and produces a min/avg/max summary across all runs. Use
+        <code>--runs 1</code> for a quick spot-check and <code>--runs 10</code> for a more stable average. The first
+        run in any session may reflect a cold start — the remaining runs are warm and comparable.
+    </p>
+
+    <!-- ══════════════════════════════════════════════════════════════════
+     PART 5 — THE ANALYST REPORT
+══════════════════════════════════════════════════════════════════ -->
+    <h2 class="part"><span class="part-num">Part 5</span> The Analyst Report</h2>
+
+    <p>After you have run the test apparatus and collected results, open <code>analysis/analysis.ipynb</code> and
+        complete the sections below. The notebook serves two purposes: it is your evidence that the pipeline worked, and
+        it contains two short analysis questions. Round numeric answers to 2 decimal places and include the code that
+        produced each result.</p>
+
+    <h3 class="section">Exporting Your Data from DynamoDB</h3>
+    <p>Before you tear down your stack, pull your results into a Python list. The following snippet scans the entire
+        table and handles DynamoDB pagination automatically. Run this in your <code>analysis.ipynb</code> notebook:</p>
+    <pre>import boto3
+from decimal import Decimal
+
+dynamodb = boto3.resource("dynamodb", region_name="us-east-1")
+table = dynamodb.Table("adflow-YOURID-results")
+
+results = []
+response = table.scan()
+results.extend(response["Items"])
+
+# Handle pagination if the table has more than 1 MB of data
+while "LastEvaluatedKey" in response:
+    response = table.scan(ExclusiveStartKey=response["LastEvaluatedKey"])
+    results.extend(response["Items"])
+
+print(f"Loaded {len(results)} records")
+
+# Convert Decimal types to float for analysis
+for item in results:
+    for key in ["winning_bid_amount", "winning_score", "score_margin"]:
+        if key in item:
+            item[key] = float(item[key])</pre>
+    <p>Once you have the <code>results</code> list, you can use standard Python (pandas, collections, etc.) to answer
+        the questions below.</p>
+
+    <div class="callout gold">
+        <div class="callout-label">Data Types in Python</div>
+        <p>When you query DynamoDB with boto3, numeric values are returned as <code>Decimal</code> types. To plot or
+            compute averages in Python, you will need to map these back to standard <code>float</code> types (e.g.
+            <code>float(item["winning_score"])</code>) as you process the scan results.</p>
+    </div>
+
+    <div class="callout red">
+        <div class="callout-label">Before you begin</div>
+        <p>Run the Burst profile (500 messages) before collecting data. Smaller data sets may not produce certain
+            category pairings and your answers will be incomplete. Export your DynamoDB table before running
+            <code>sam delete</code>.
+        </p>
+    </div>
+
+    <h3 class="section">Notebook Section 1: Pipeline Evidence</h3>
+    <p>This section is not graded for analysis quality — it is your proof that the pipeline ran successfully. Include
+        the following in your notebook with cell outputs visible:</p>
+    <ol>
+        <li>The DynamoDB scan output showing the total number of records loaded (from the export snippet above).</li>
+        <li>A count of auction wins per advertiser (a simple <code>Counter</code> or <code>value_counts()</code> on
+            <code>winning_advertiser_id</code>).</li>
+        <li>A screenshot of the test apparatus showing a completed Burst run with results arriving.</li>
+    </ol>
+    <p>This allows us to quickly verify that your pipeline processed messages end-to-end without needing to redeploy
+        your stack.</p>
+
+    <div class="task">
+        <div class="task-header">
+            <span class="task-num">Q1</span>
+            <span class="task-name">Results Analysis</span>
+        </div>
+        <div class="task-body">
+            <p>Using the data you exported from DynamoDB, answer the following:</p>
+            <ul>
+                <li>Which advertiser won the most auctions overall? Which advertiser won the most in the
+                    <code>sports</code> content category specifically?</li>
+                <li>Why do the overall and sports-specific rankings differ? Explain in 2–3 sentences, referencing
+                    the relevance multiplier table.</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="task">
+        <div class="task-header">
+            <span class="task-num">Q2</span>
+            <span class="task-name">Code Reflection</span>
+        </div>
+        <div class="task-body">
+            <p>Answer one of the following (your choice):</p>
+            <ul>
+                <li><strong>Option A (Scale & Limits):</strong> The test apparatus sent messages in small batches. If traffic suddenly spiked from 10 opportunities a second to 10,000 a second, what specific components of our current pipeline (SQS limits, Lambda concurrency, DynamoDB throughput) would become bottlenecks first, and what AWS settings would you adjust to handle the load?</li>
+                <li><strong>Option B (The Distributed Process):</strong> Writing code for an event-driven, queue-based pipeline is very different from writing a single local script. What was the most challenging part of getting SQS, Lambda, and DynamoDB to communicate correctly, or the most confusing bug you encountered, and what did it teach you about distributed architecture?</li>
+            </ul>
+            <p>A well-argued two-paragraph response is sufficient for either option.</p>
+        </div>
+    </div>
+
+
+    <!-- ==================================================================
+     PART 6 — GRADING
+================================================================== -->
+    <h2 class="part"><span class="part-num">Part 6</span> Grading</h2>
+
+    <p>This project is worth <strong>100 points</strong>. The majority of your grade comes from code that works
+        correctly — tasks are evaluated by running the provided test suite against your <code>lambda_handler.py</code>
+        and by checking that your deployed pipeline produced results in DynamoDB. Written analysis is a smaller
+        portion.</p>
+
+    <div class="table-wrap">
+        <table class="grade-table">
+            <thead>
+                <tr>
+                    <th>Component</th>
+                    <th>Points</th>
+                    <th>How It Is Evaluated</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr style="background:#eaf5ee;">
+                    <td colspan="3" style="font-weight:bold; color:#1a6b3a;">Code (80 points)</td>
+                </tr>
+                <tr>
+                    <td>Task 1 — compute_score</td>
+                    <td>15</td>
+                    <td>We run the test suite. Tests for correct formula, relevance lookup, time bonus, device bonus,
+                        and edge cases (zero bid, missing category, bad timestamp) must all pass.</td>
+                </tr>
+                <tr>
+                    <td>Task 2 — select_winner</td>
+                    <td>15</td>
+                    <td>Tests for correct winner selection, score margin calculation, and returning None for empty bids
+                        must pass.</td>
+                </tr>
+                <tr>
+                    <td>Task 3 — process_opportunity</td>
+                    <td>15</td>
+                    <td>Tests for correct result schema (including content_category and processed_at), SQS post, and
+                        DynamoDB write with Decimal conversion must pass.</td>
+                </tr>
+                <tr>
+                    <td>Task 4 — lambda_handler</td>
+                    <td>20</td>
+                    <td>Tests for full batch processing, batchItemFailures format, exception isolation (one bad
+                        message does not crash the batch), and batch timing logging must pass.</td>
+                </tr>
+                <tr>
+                    <td>End-to-end pipeline</td>
+                    <td>15</td>
+                    <td>Your notebook shows 450+ records loaded from DynamoDB after a Burst run. Screenshot of the
+                        test apparatus confirms results arrived. This proves the full SQS-to-Lambda-to-DynamoDB path
+                        worked.</td>
+                </tr>
+                <tr style="background:#fdf6e3;">
+                    <td colspan="3" style="font-weight:bold; color:#b07d20;">Analysis (20 points)</td>
+                </tr>
+                <tr>
+                    <td>Q1 — Results Analysis</td>
+                    <td>10</td>
+                    <td>Winner counts shown (overall and sports-filtered). Explanation references relevance
+                        multipliers and is logically sound.</td>
+                </tr>
+                <tr>
+                    <td>Q2 — Code Reflection</td>
+                    <td>10</td>
+                    <td>Proposal (Option A) is concrete and references a specific mechanism, or code walkthrough
+                        (Option B) accurately traces the exception handling path.</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <h3 class="section">Partial Credit</h3>
+    <p>We want to reward progress even if your pipeline is not fully working. Here is how partial credit is
+        applied:</p>
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Scenario</th>
+                    <th>Points Earned</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>All 8 tests pass, Burst run produces 450+ results, both questions complete</td>
+                    <td>Full marks (100)</td>
+                </tr>
+                <tr>
+                    <td>All 8 tests pass, but no deployed results (DynamoDB empty or stack not deployed)</td>
+                    <td>Up to 65 (Tasks 1–4 only)</td>
+                </tr>
+                <tr>
+                    <td>Some tests pass (e.g. Tasks 1–2 work but Tasks 3–4 do not)</td>
+                    <td>Points for passing tasks only</td>
+                </tr>
+                <tr>
+                    <td>No tests pass, but code shows meaningful attempt (not just the starter skeleton)</td>
+                    <td>Up to 10 (effort credit at instructor discretion)</td>
+                </tr>
+                <tr>
+                    <td>Starter code submitted unchanged</td>
+                    <td>0</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <h3 class="section">Submission via GitHub</h3>
+    <p>Submit your work by pushing to the course repository on a branch named after your student ID. Do
+        <strong>not</strong> push to <code>main</code>.</p>
+
+    <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-body">
+            <h4>Clone the course repository</h4>
+            <pre>git clone https://github.com/gsaluncf/DistributedForDataScienceF26.git
+cd DistributedForDataScienceF26</pre>
+            <p>The starter code is in <code>project1/student-starter/</code>. That is the folder you will work in.</p>
+        </div>
+    </div>
+
+    <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-body">
+            <h4>Create your student branch</h4>
+            <p>Use the same student ID you chose for your AWS resources (e.g. <code>gsalu</code>):</p>
+            <pre>git checkout -b YOURID</pre>
+            <p>All your commits will live on this branch. Never commit directly to <code>main</code>.</p>
+        </div>
+    </div>
+
+    <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-body">
+            <h4>Add your screenshots</h4>
+            <p>Save your test apparatus screenshot (and any other evidence images) into a
+                <code>screenshots/</code> folder inside <code>project1/student-starter/</code>.
+                Reference them from your notebook if you like.</p>
+            <pre>mkdir project1/student-starter/screenshots
+# save your screenshot into that folder
+git add project1/student-starter/screenshots/</pre>
+        </div>
+    </div>
+
+    <div class="step">
+        <div class="step-num">4</div>
+        <div class="step-body">
+            <h4>Commit and push to your branch</h4>
+            <p>When you are ready to submit (or at any checkpoint), commit and push to your named branch:</p>
+            <pre>git add -A
+git commit -m "Project 1 submission"
+git push origin YOURID</pre>
+            <p>Replace <code>YOURID</code> with your actual student ID (e.g. <code>git push origin gsalu</code>).
+                You can push as many times as you want before the deadline. We grade the most recent commit on
+                your branch at the due date.</p>
+        </div>
+    </div>
+
+    <div class="callout gold">
+        <div class="callout-label">What Gets Graded</div>
+        <p>We check out your branch (<code>YOURID</code>) at the deadline and run the test suite against
+            <code>project1/student-starter/worker/lambda_handler.py</code>. We then open
+            <code>project1/student-starter/analysis/analysis.ipynb</code> to check pipeline evidence and your
+            two written answers. Make sure your notebook has all cells executed with outputs visible — do not
+            clear outputs before pushing. Screenshots of the test apparatus should be committed to the repo so
+            we can see them without redeploying your stack.</p>
+    </div>
+
+
+    <footer class="doc-footer">
+        Project 1 &nbsp;&middot;&nbsp; Distributed Systems for Data Science &nbsp;&middot;&nbsp; New College of Florida
+        &nbsp;&middot;&nbsp; Spring 2026
+    </footer>
+
+
+</body>
+
+</html>
+
+
