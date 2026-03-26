@@ -18,7 +18,8 @@ This repository contains projects and experiments exploring distributed systems 
 
 ## Projects
 
-Adflow Optimization:
+### Adflow Optimization:
+
 This project implements a scalable distributed computing system using AWS Lambda and
   the Serverless Application Model (SAM). It features a worker-based architecture
   designed to handle concurrent task processing and high-burst workloads efficiently.
