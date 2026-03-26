@@ -24,8 +24,6 @@ This project implements a scalable distributed computing system using AWS Lambda
   the Serverless Application Model (SAM). It features a worker-based architecture
   designed to handle concurrent task processing and high-burst workloads efficiently.
 
-Coming soon!
-
 ---
 
 *Last updated: 3/26/26*
